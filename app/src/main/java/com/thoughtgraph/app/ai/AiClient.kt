@@ -46,11 +46,12 @@ class AiClient(
         settings.aiEnabled && credentials.hasApiKey() && settings.model.isNotBlank()
 
     fun buildPreview(action: AiAction, contextText: String): AiRequestPreview {
-        val (endpoint, _) = endpointAndAuth()
+        val (endpoint, _) = resolve(settings.provider, settings.model, settings.customEndpoint, credentials.getApiKey())
         return AiRequestPreview(
             provider = settings.provider,
             model = settings.model,
-            endpoint = endpoint,
+            endpoint = endpoint.substringBefore("?key="), // never surface the key
+
             payloadPreview = "${action.instruction}\n\n$contextText"
         )
     }
@@ -62,59 +63,78 @@ class AiClient(
      */
     fun run(action: AiAction, contextText: String): AiResult {
         if (!isReady()) return AiResult.NotConfigured
-        val key = credentials.getApiKey()
-        val model = settings.model
-        val (endpoint, headers) = endpointAndAuth()
-        val body = buildBody(settings.provider, model, action, contextText)
+        val prompt = "${action.instruction}\n\n$contextText\n\n각 제안을 한 줄씩, 번호 없이 작성해줘."
+        val body = buildBody(settings.provider, settings.model, prompt)
+        val (url, headers) = resolve(settings.provider, settings.model, settings.customEndpoint, credentials.getApiKey())
+        return when (val r = post(url, headers, body)) {
+            is Http.Ok -> AiResult.Success(parseSuggestions(settings.provider, r.body))
+            is Http.Err -> AiResult.Failure(r.message)
+        }
+    }
 
+    /**
+     * Performs a real minimal request to validate the given (possibly unsaved)
+     * credentials. Returns a concrete success/failure — never a fake "OK".
+     * Must be called off the main thread.
+     */
+    fun testConnection(provider: String, apiKey: String, model: String, customEndpoint: String): AiResult {
+        if (apiKey.isBlank()) return AiResult.Failure("API 키를 입력하세요.")
+        if (model.isBlank()) return AiResult.Failure("모델 ID를 입력하세요.")
+        val body = buildBody(provider, model, "연결 확인용 테스트입니다. '확인'이라고만 답해줘.")
+        val (url, headers) = resolve(provider, model, customEndpoint, apiKey)
+        return when (val r = post(url, headers, body)) {
+            is Http.Ok -> AiResult.Success(listOf("연결에 성공했습니다."))
+            is Http.Err -> AiResult.Failure(r.message)
+        }
+    }
+
+    // ---- HTTP ----
+
+    private sealed class Http {
+        data class Ok(val body: String) : Http()
+        data class Err(val message: String) : Http()
+    }
+
+    private fun post(url: String, headers: Map<String, String>, body: String): Http {
         return try {
-            val conn = (URL(endpoint).openConnection() as HttpURLConnection).apply {
+            val conn = (URL(url).openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"
                 connectTimeout = 20000
                 readTimeout = 40000
                 doOutput = true
                 setRequestProperty("Content-Type", "application/json")
-                headers(key).forEach { (k, v) -> setRequestProperty(k, v) }
+                headers.forEach { (k, v) -> setRequestProperty(k, v) }
             }
             conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
             val code = conn.responseCode
             val stream = if (code in 200..299) conn.inputStream else conn.errorStream
             val text = stream?.bufferedReader()?.use { it.readText() } ?: ""
-            if (code !in 200..299) {
-                // Do not include the raw body in a persisted log; only a short message.
-                AiResult.Failure("API 오류($code). 키와 모델 설정을 확인하세요.")
-            } else {
-                AiResult.Success(parseSuggestions(settings.provider, text))
-            }
+            // Raw bodies are never persisted or logged.
+            if (code in 200..299) Http.Ok(text)
+            else Http.Err("API 오류($code). 키·모델·엔드포인트를 확인하세요.")
         } catch (e: Exception) {
-            AiResult.Failure("연결에 실패했습니다. 네트워크와 엔드포인트를 확인하세요.")
+            Http.Err("연결에 실패했습니다. 네트워크와 엔드포인트를 확인하세요.")
         }
     }
 
     // ---- Provider specifics ----
 
-    private fun endpointAndAuth(): Pair<String, (String) -> Map<String, String>> {
-        return when (settings.provider) {
-            "anthropic" -> "https://api.anthropic.com/v1/messages" to { key: String ->
+    private fun resolve(provider: String, model: String, customEndpoint: String, key: String): Pair<String, Map<String, String>> {
+        return when (provider) {
+            "anthropic" -> "https://api.anthropic.com/v1/messages" to
                 mapOf("x-api-key" to key, "anthropic-version" to "2023-06-01")
-            }
-            "openai" -> "https://api.openai.com/v1/chat/completions" to { key: String ->
+            "openai" -> "https://api.openai.com/v1/chat/completions" to
                 mapOf("Authorization" to "Bearer $key")
-            }
-            "gemini" -> {
-                // Model id is user supplied; key is passed as a query param per API.
-                "https://generativelanguage.googleapis.com/v1beta/models/${settings.model}:generateContent" to
-                    { _: String -> emptyMap() }
-            }
+            "gemini" ->
+                "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$key" to emptyMap()
             else -> {
-                val ep = settings.customEndpoint.ifBlank { "https://example.com/v1/chat/completions" }
-                ep to { key: String -> mapOf("Authorization" to "Bearer $key") }
+                val ep = customEndpoint.ifBlank { "https://example.com/v1/chat/completions" }
+                ep to mapOf("Authorization" to "Bearer $key")
             }
         }
     }
 
-    private fun buildBody(provider: String, model: String, action: AiAction, context: String): String {
-        val prompt = "${action.instruction}\n\n$context\n\n각 제안을 한 줄씩, 번호 없이 작성해줘."
+    private fun buildBody(provider: String, model: String, prompt: String): String {
         return when (provider) {
             "anthropic" -> JSONObject().apply {
                 put("model", model)

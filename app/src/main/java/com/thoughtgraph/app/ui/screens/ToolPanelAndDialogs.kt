@@ -237,39 +237,27 @@ private fun SmallBtn(label: String, bg: Color, fg: Color, onClick: () -> Unit) {
 // ---- Export / Import dialog ----
 
 @Composable
-fun ExportDialog(viewModel: AppViewModel, onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    val clipboard = LocalClipboardManager.current
-    val state by viewModel.state.collectAsState()
-    var importOpen by remember { mutableStateOf(false) }
-
-    if (importOpen) {
-        ImportDialog(viewModel = viewModel, onDone = { importOpen = false; onDismiss() }, onCancel = { importOpen = false })
-        return
-    }
-
+fun ExportSheet(
+    onDismiss: () -> Unit,
+    onSaveJson: () -> Unit,
+    onSaveMarkdown: () -> Unit,
+    onShareJson: () -> Unit,
+    onBackup: () -> Unit,
+    onCopyAiContext: () -> Unit,
+    onImport: () -> Unit
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = { TextButton(onClick = onDismiss) { Text("닫기") } },
-        title = { Text("내보내기 · 백업", fontWeight = FontWeight.Black) },
+        title = { Text("내보내기 · 백업 · 가져오기", fontWeight = FontWeight.Black) },
         text = {
             Column {
-                OptionRow("JSON · 노드와 연결 구조") {
-                    shareText(context, GraphSerializer.toJson(state.snapshot))
-                }
-                OptionRow("Markdown · 읽기 쉬운 문서") {
-                    shareText(context, GraphSerializer.toMarkdown(state.snapshot))
-                }
-                OptionRow("AI 전달용 맥락 · 클립보드 복사") {
-                    val sel = state.snapshot.nodes.filter { it.id == state.selectedNodeId }
-                    clipboard.setText(AnnotatedString(GraphSerializer.toAiContext(state.snapshot, sel)))
-                    viewModel.postMessage("AI 전달용 맥락을 복사했습니다.")
-                    onDismiss()
-                }
-                OptionRow("전체 백업 (모든 그래프) · 공유") {
-                    shareText(context, GraphSerializer.backup(viewModel.repository().allGraphs()))
-                }
-                OptionRow("가져오기 / 복구 (JSON 붙여넣기)") { importOpen = true }
+                OptionRow("JSON 파일로 저장") { onSaveJson() }
+                OptionRow("Markdown 파일로 저장") { onSaveMarkdown() }
+                OptionRow("JSON 공유 (공유 시트)") { onShareJson() }
+                OptionRow("AI 전달용 맥락 공유") { onCopyAiContext() }
+                OptionRow("전체 백업 저장 (모든 그래프)") { onBackup() }
+                OptionRow("가져오기 / 복구 (파일 선택)") { onImport() }
             }
         }
     )
@@ -285,86 +273,11 @@ private fun OptionRow(label: String, onClick: () -> Unit) {
     ) { Text(label, fontSize = 11.sp, fontWeight = FontWeight.Black) }
 }
 
+// ---- Node editor (mobile bottom sheet) ----
+
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-fun ImportDialog(viewModel: AppViewModel, onDone: () -> Unit, onCancel: () -> Unit) {
-    var text by remember { mutableStateOf("") }
-    var preview by remember { mutableStateOf<String?>(null) }
-    var parsed by remember { mutableStateOf<List<com.thoughtgraph.app.data.GraphSnapshot>?>(null) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var replace by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onCancel,
-        confirmButton = {
-            TextButton(
-                enabled = parsed != null,
-                onClick = {
-                    parsed?.let {
-                        try {
-                            viewModel.repository().restoreBackup(it, replace = replace)
-                            viewModel.refreshRecents()
-                            it.firstOrNull()?.let { g -> viewModel.openGraph(g.meta.id) }
-                            viewModel.postMessage("${it.size}개 그래프를 가져왔습니다.")
-                            onDone()
-                        } catch (e: Exception) {
-                            error = "가져오기에 실패했습니다."
-                        }
-                    }
-                }
-            ) { Text("가져오기") }
-        },
-        dismissButton = { TextButton(onClick = onCancel) { Text("취소") } },
-        title = { Text("가져오기 / 복구", fontWeight = FontWeight.Black) },
-        text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                Text("JSON 또는 백업 텍스트를 붙여넣고 미리보기로 확인하세요.", color = Muted, fontSize = 10.sp)
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it; preview = null; parsed = null; error = null },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp).padding(top = 8.dp),
-                    placeholder = { Text("{ \"nodes\": [ ... ] }") }
-                )
-                TextButton(onClick = {
-                    try {
-                        val graphs = try {
-                            GraphSerializer.restore(text)
-                        } catch (e: GraphSerializer.ImportException) {
-                            listOf(GraphSerializer.fromJson(text))
-                        }
-                        parsed = graphs
-                        val nodeCount = graphs.sumOf { it.nodes.size }
-                        preview = "그래프 ${graphs.size}개 · 노드 ${nodeCount}개"
-                        error = null
-                    } catch (e: GraphSerializer.ImportException) {
-                        error = e.message; parsed = null; preview = null
-                    } catch (e: Exception) {
-                        error = "형식이 올바르지 않습니다."; parsed = null; preview = null
-                    }
-                }) { Text("미리보기") }
-                preview?.let { Text(it, color = Color(0xFF4F775F), fontSize = 11.sp, fontWeight = FontWeight.Black) }
-                error?.let { Text(it, color = Color(0xFFC85151), fontSize = 11.sp) }
-                Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    androidx.compose.material3.Checkbox(checked = replace, onCheckedChange = { replace = it })
-                    Text("기존 데이터를 모두 지우고 교체 (중복 처리)", fontSize = 10.sp)
-                }
-                if (!replace) Text("체크 해제 시 기존 그래프에 추가/병합됩니다.", color = Muted, fontSize = 9.sp)
-            }
-        }
-    )
-}
-
-private fun shareText(context: android.content.Context, content: String) {
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
-        putExtra(Intent.EXTRA_TEXT, content)
-    }
-    context.startActivity(Intent.createChooser(intent, "내보내기"))
-}
-
-// ---- Node editor ----
-
-@Composable
-fun NodeEditorDialog(
+fun NodeEditorSheet(
     node: Node,
     edges: List<Edge>,
     onSave: (Node) -> Unit,
@@ -380,21 +293,17 @@ fun NodeEditorDialog(
     var importance by remember { mutableStateOf(node.importance) }
     var minutes by remember { mutableStateOf(node.estimatedMinutes?.toString() ?: "") }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = {
-                onSave(node.copy(
-                    title = title, description = desc, type = type, status = status,
-                    importance = importance,
-                    estimatedMinutes = minutes.toIntOrNull()
-                ))
-            }) { Text("저장") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("닫기") } },
-        title = { Text("노드 편집", fontWeight = FontWeight.Black) },
-        text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+    androidx.compose.material3.ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 560.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 18.dp)
+                .padding(bottom = 24.dp)
+        ) {
+            Text("노드 편집", fontWeight = FontWeight.Black, fontSize = 16.sp)
+            Column(modifier = Modifier.padding(top = 8.dp)) {
                 OutlinedTextField(title, { title = it }, label = { Text("제목") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(desc, { desc = it }, label = { Text("설명") }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
 
@@ -423,9 +332,19 @@ fun NodeEditorDialog(
                     TextButton(onClick = onDuplicate) { Text("복제") }
                     TextButton(onClick = onDelete) { Text("삭제", color = Color(0xFFC85151)) }
                 }
+
+                Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text("닫기") }
+                    TextButton(onClick = {
+                        onSave(node.copy(
+                            title = title, description = desc, type = type, status = status,
+                            importance = importance, estimatedMinutes = minutes.toIntOrNull()
+                        ))
+                    }) { Text("저장", fontWeight = FontWeight.Black) }
+                }
             }
         }
-    )
+    }
 }
 
 @Composable

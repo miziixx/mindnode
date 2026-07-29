@@ -208,6 +208,22 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         return node
     }
 
+    /** Adds a node at explicit graph-space coordinates (e.g. double-tap on canvas). */
+    fun addNodeAt(x: Float, y: Float, title: String = "새 노드", type: NodeType = NodeType.IDEA): Node {
+        val gid = current().snapshot.meta.id
+        val node = Node(
+            graphId = gid,
+            title = title,
+            type = type,
+            x = x,
+            y = y,
+            status = if (type == NodeType.TASK) NodeStatus.TODO else NodeStatus.THOUGHT
+        )
+        mutate { it.copy(nodes = it.nodes + node) }
+        select(node.id)
+        return node
+    }
+
     fun updateNode(node: Node) {
         mutate { snap ->
             snap.copy(nodes = snap.nodes.map { if (it.id == node.id) node.copy(updatedAt = System.currentTimeMillis()) else it })

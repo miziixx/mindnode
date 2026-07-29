@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">ThoughtGraph</string>
+    <string name="app_name">노드모드</string>
     <string name="brand_sub">생각은 직접, 정리는 도구로</string>
 </resources>

@@ -79,7 +79,7 @@ fun TopBar(
         Box(
             modifier = Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(Accent),
             contentAlignment = Alignment.Center
-        ) { Text("T", color = Color.White, fontWeight = FontWeight.Black) }
+        ) { Text("노", color = Color.White, fontWeight = FontWeight.Black) }
         Spacer(Modifier.width(8.dp))
         BasicTextField(
             value = title,

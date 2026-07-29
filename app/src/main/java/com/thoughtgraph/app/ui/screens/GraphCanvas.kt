@@ -4,18 +4,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -24,12 +24,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.thoughtgraph.app.data.GraphSnapshot
@@ -40,9 +39,17 @@ import com.thoughtgraph.app.ui.theme.Muted
 import com.thoughtgraph.app.ui.theme.Panel
 import com.thoughtgraph.app.ui.theme.Purple
 
+private const val NODE_W_DP = 188f
+private const val NODE_H_DP = 96f
+
 /**
- * Pannable, zoomable graph canvas. Node coordinates are stored in graph space;
- * the whole stage is translated by [pan] and scaled by [zoom].
+ * Pannable, zoomable graph canvas with full touch handling:
+ *  - empty single tap: clear selection
+ *  - empty double tap: add a node at that point
+ *  - two-finger pinch / drag: zoom + pan the canvas
+ *  - node tap: select · node double tap: open editor · node long-press: context menu
+ *  - node drag: move (node events are consumed so the canvas does not pan)
+ *  - drag the selected node's connection handle onto another node: connect them
  */
 @Composable
 fun GraphCanvas(
@@ -50,68 +57,125 @@ fun GraphCanvas(
     selectedNodeId: String?,
     zoom: Float,
     pan: Offset,
-    connectingFromId: String?,
     onZoomPan: (Float, Offset) -> Unit,
     onSelect: (String) -> Unit,
+    onClearSelection: () -> Unit,
     onMove: (String, Float, Float, Boolean) -> Unit,
-    onTapNodeWhileConnecting: (String) -> Unit,
+    onAddNodeAt: (Float, Float) -> Unit,
     onOpenNode: (String) -> Unit,
+    onNodeMenu: (String) -> Unit,
+    onConnect: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var localZoom by remember(zoom) { mutableFloatStateOf(zoom) }
-    var localPan by remember(pan) { mutableStateOf(pan) }
+    val density = LocalDensity.current
+    val nodeWpx = with(density) { NODE_W_DP.dp.toPx() }
+    val nodeHpx = with(density) { NODE_H_DP.dp.toPx() }
+
+    // Live connection-drag state (screen-space endpoint of the in-progress link).
+    var linkFrom by remember { mutableStateOf<String?>(null) }
+    var linkTo by remember { mutableStateOf<Offset?>(null) }
+
+    fun nodeCenterScreen(n: Node) = Offset(n.x * zoom + pan.x + nodeWpx / 2f, n.y * zoom + pan.y + nodeHpx / 2f)
+
+    fun nodeAt(screen: Offset): Node? = snapshot.nodes.lastOrNull { n ->
+        val left = n.x * zoom + pan.x
+        val top = n.y * zoom + pan.y
+        screen.x in left..(left + nodeWpx) && screen.y in top..(top + nodeHpx)
+    }
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .clip(RoundedCornerShape(24.dp))
             .background(Color(0xFFFAF7F0))
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDrag = { change, drag ->
-                        change.consume()
-                        localPan += drag
-                        onZoomPan(localZoom, localPan)
+            // Tap on empty space: single = clear, double = add node at point (graph coords).
+            .pointerInput(zoom, pan) {
+                detectTapGestures(
+                    onTap = { onClearSelection() },
+                    onDoubleTap = { pos ->
+                        onAddNodeAt((pos.x - pan.x) / zoom, (pos.y - pan.y) / zoom)
                     }
                 )
             }
+            // Two-finger pinch to zoom and drag to pan the whole stage.
+            .pointerInput(Unit) {
+                detectTransformGestures { _, panChange, zoomChange, _ ->
+                    val newZoom = (zoom * zoomChange).coerceIn(0.4f, 1.8f)
+                    onZoomPan(newZoom, pan + panChange)
+                }
+            }
     ) {
-        // Connections layer
+        // Connections + in-progress link.
         androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
             val byId = snapshot.nodes.associateBy { it.id }
-            val dashed = PathEffect.dashPathEffect(floatArrayOf(14f, 16f))
             snapshot.edges.forEach { e ->
                 val a = byId[e.sourceNodeId]
                 val b = byId[e.targetNodeId]
                 if (a != null && b != null) {
-                    val start = Offset(a.x * localZoom + localPan.x + 94, a.y * localZoom + localPan.y + 47)
-                    val end = Offset(b.x * localZoom + localPan.x + 94, b.y * localZoom + localPan.y + 47)
                     drawLine(
                         color = Color(0xFFC7BAA9),
-                        start = start,
-                        end = end,
+                        start = nodeCenterScreen(a),
+                        end = nodeCenterScreen(b),
                         strokeWidth = 2.5f,
-                        pathEffect = dashed
+                        pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(14f, 16f))
                     )
                 }
             }
+            val from = linkFrom?.let { byId[it] }
+            val to = linkTo
+            if (from != null && to != null) {
+                drawLine(color = Accent, start = nodeCenterScreen(from), end = to, strokeWidth = 3f)
+            }
         }
 
-        // Nodes layer
+        // Nodes.
         snapshot.nodes.forEach { node ->
             NodeCard(
                 node = node,
                 selected = node.id == selectedNodeId,
-                connecting = connectingFromId != null,
-                zoom = localZoom,
-                pan = localPan,
-                onSelect = {
-                    if (connectingFromId != null) onTapNodeWhileConnecting(node.id)
-                    else onSelect(node.id)
-                },
-                onMove = onMove,
-                onOpen = { onOpenNode(node.id) }
+                zoom = zoom,
+                pan = pan,
+                onSelect = { onSelect(node.id) },
+                onOpen = { onOpenNode(node.id) },
+                onMenu = { onNodeMenu(node.id) },
+                onMove = onMove
             )
+        }
+
+        // Connection handle on the selected node.
+        val selected = snapshot.nodes.firstOrNull { it.id == selectedNodeId }
+        if (selected != null) {
+            val handleX = selected.x * zoom + pan.x + nodeWpx - with(density) { 6.dp.toPx() }
+            val handleY = selected.y * zoom + pan.y + nodeHpx / 2f - with(density) { 12.dp.toPx() }
+            Box(
+                modifier = Modifier
+                    .offset { IntOffset(handleX.toInt(), handleY.toInt()) }
+                    .size(28.dp) // >= 24dp touch target
+                    .pointerInput(selected.id, zoom, pan) {
+                        detectDragGestures(
+                            onDragStart = {
+                                linkFrom = selected.id
+                                linkTo = nodeCenterScreen(selected)
+                            },
+                            onDrag = { change, _ ->
+                                change.consume()
+                                linkTo = change.position + Offset(handleX, handleY)
+                            },
+                            onDragEnd = {
+                                val target = linkTo?.let { nodeAt(it) }
+                                if (target != null && target.id != selected.id) onConnect(selected.id, target.id)
+                                linkFrom = null; linkTo = null
+                            },
+                            onDragCancel = { linkFrom = null; linkTo = null }
+                        )
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier.size(14.dp).clip(RoundedCornerShape(50))
+                        .background(Panel).border(3.dp, Accent, RoundedCornerShape(50))
+                )
+            }
         }
     }
 }
@@ -120,12 +184,12 @@ fun GraphCanvas(
 private fun NodeCard(
     node: Node,
     selected: Boolean,
-    connecting: Boolean,
     zoom: Float,
     pan: Offset,
     onSelect: () -> Unit,
-    onMove: (String, Float, Float, Boolean) -> Unit,
-    onOpen: () -> Unit
+    onOpen: () -> Unit,
+    onMenu: () -> Unit,
+    onMove: (String, Float, Float, Boolean) -> Unit
 ) {
     val accent = Color(node.type.accent)
     val bg = when {
@@ -136,18 +200,19 @@ private fun NodeCard(
     Box(
         modifier = Modifier
             .offset { IntOffset((node.x * zoom + pan.x).toInt(), (node.y * zoom + pan.y).toInt()) }
-            .width(188.dp)
+            .width(NODE_W_DP.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(if (node.isDraft) bg else bg.copy(alpha = 0.98f))
+            .background(bg)
             .border(
                 width = if (selected) 2.dp else 1.dp,
                 color = if (selected) Accent else Line,
                 shape = RoundedCornerShape(16.dp)
             )
-            .pointerInput(node.id, connecting) {
+            .pointerInput(node.id) {
                 detectTapGestures(
                     onTap = { onSelect() },
-                    onDoubleTap = { onOpen() }
+                    onDoubleTap = { onOpen() },
+                    onLongPress = { onMenu() }
                 )
             }
             .pointerInput(node.id, zoom) {
@@ -165,31 +230,14 @@ private fun NodeCard(
     ) {
         Column {
             Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(accent.copy(alpha = 0.10f))
-                    .padding(horizontal = 7.dp, vertical = 4.dp)
+                modifier = Modifier.clip(RoundedCornerShape(999.dp))
+                    .background(accent.copy(alpha = 0.10f)).padding(horizontal = 7.dp, vertical = 4.dp)
             ) {
-                Text(
-                    text = if (node.isDraft) "보조 제안" else node.type.label,
-                    color = accent,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Black
-                )
+                Text(if (node.isDraft) "보조 제안" else node.type.label, color = accent, fontSize = 9.sp, fontWeight = FontWeight.Black)
             }
-            Text(
-                text = node.title.ifBlank { "제목 없음" },
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(top = 8.dp)
-            )
+            Text(node.title.ifBlank { "제목 없음" }, fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 8.dp))
             if (node.description.isNotBlank()) {
-                Text(
-                    text = node.description,
-                    color = Muted,
-                    fontSize = 10.sp,
-                    modifier = Modifier.padding(top = 5.dp)
-                )
+                Text(node.description, color = Muted, fontSize = 10.sp, modifier = Modifier.padding(top = 5.dp))
             }
         }
     }

@@ -41,6 +41,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.unit.sp
 import com.thoughtgraph.app.settings.SecureCredentialStore
 import com.thoughtgraph.app.settings.SettingsStore
@@ -63,9 +66,12 @@ private val providers = listOf(
 fun SettingsSheet(
     settings: SettingsStore,
     credentials: SecureCredentialStore,
+    aiClient: com.thoughtgraph.app.ai.AiClient,
     onClose: () -> Unit,
     onToast: (String) -> Unit
 ) {
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var testing by remember { mutableStateOf(false) }
     var aiEnabled by remember { mutableStateOf(settings.aiEnabled) }
     var selectedOnly by remember { mutableStateOf(settings.selectedOnly) }
     var provider by remember { mutableStateOf(settings.provider) }
@@ -184,12 +190,23 @@ fun SettingsSheet(
                     )
                 }
 
-                GhostButton("연결 설정 확인") {
-                    when {
-                        !aiEnabled -> onToast("AI 보조를 먼저 켜세요.")
-                        apiKey.isBlank() -> onToast("API 키를 입력하세요.")
-                        model.isBlank() -> onToast("모델 ID를 입력하세요.")
-                        else -> onToast("설정이 유효합니다. 저장 후 노드에서 직접 호출하세요.")
+                GhostButton(if (testing) "연결 확인 중…" else "연결 확인 (실제 요청)") {
+                    if (testing) return@GhostButton
+                    if (apiKey.isBlank()) { onToast("API 키를 입력하세요."); return@GhostButton }
+                    if (model.isBlank()) { onToast("모델 ID를 입력하세요."); return@GhostButton }
+                    testing = true
+                    scope.launch(Dispatchers.IO) {
+                        val result = aiClient.testConnection(provider, apiKey.trim(), model.trim(), endpoint.trim())
+                        withContext(Dispatchers.Main) {
+                            testing = false
+                            onToast(
+                                when (result) {
+                                    is com.thoughtgraph.app.ai.AiResult.Success -> "연결에 성공했습니다."
+                                    is com.thoughtgraph.app.ai.AiResult.Failure -> result.message
+                                    com.thoughtgraph.app.ai.AiResult.NotConfigured -> "설정을 확인하세요."
+                                }
+                            )
+                        }
                     }
                 }
             }
