@@ -180,7 +180,8 @@ fun AppRoot(viewModel: AppViewModel, state: UiState) {
                             onAddNodeAt = { x, y -> viewModel.addNodeAt(x, y) },
                             onOpenNode = { editorNodeId = it },
                             onNodeMenu = { menuNodeId = it },
-                            onConnect = { s, t -> viewModel.connect(s, t) }
+                            onConnect = { s, t -> viewModel.connect(s, t) },
+                            showMiniMap = viewModel.settings.showMiniMap && wide
                         )
                         MainView.LIST -> Box(Modifier.fillMaxSize().clip(RoundedCornerShape(24.dp)).background(Panel)) {
                             ListView(state.snapshot, state.searchQuery, viewModel::select)

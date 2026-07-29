@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -65,11 +66,13 @@ fun GraphCanvas(
     onOpenNode: (String) -> Unit,
     onNodeMenu: (String) -> Unit,
     onConnect: (String, String) -> Unit,
+    showMiniMap: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
     val nodeWpx = with(density) { NODE_W_DP.dp.toPx() }
     val nodeHpx = with(density) { NODE_H_DP.dp.toPx() }
+    var canvasSize by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
 
     // Live connection-drag state (screen-space endpoint of the in-progress link).
     var linkFrom by remember { mutableStateOf<String?>(null) }
@@ -88,6 +91,7 @@ fun GraphCanvas(
             .fillMaxSize()
             .clip(RoundedCornerShape(24.dp))
             .background(Color(0xFFFAF7F0))
+            .onSizeChanged { canvasSize = it }
             // Tap on empty space: single = clear, double = add node at point (graph coords).
             .pointerInput(zoom, pan) {
                 detectTapGestures(
@@ -105,19 +109,25 @@ fun GraphCanvas(
                 }
             }
     ) {
-        // Connections + in-progress link.
+        // Connections (dashed bezier curves, matching the prototype) + in-progress link.
         androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
             val byId = snapshot.nodes.associateBy { it.id }
+            val dashed = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(14f, 16f))
             snapshot.edges.forEach { e ->
                 val a = byId[e.sourceNodeId]
                 val b = byId[e.targetNodeId]
                 if (a != null && b != null) {
-                    drawLine(
+                    val s = nodeCenterScreen(a)
+                    val t = nodeCenterScreen(b)
+                    val dx = (t.x - s.x) * 0.45f
+                    val path = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(s.x, s.y)
+                        cubicTo(s.x + dx, s.y, t.x - dx, t.y, t.x, t.y)
+                    }
+                    drawPath(
+                        path = path,
                         color = Color(0xFFC7BAA9),
-                        start = nodeCenterScreen(a),
-                        end = nodeCenterScreen(b),
-                        strokeWidth = 2.5f,
-                        pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(14f, 16f))
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.5f, pathEffect = dashed)
                     )
                 }
             }
@@ -176,6 +186,65 @@ fun GraphCanvas(
                         .background(Panel).border(3.dp, Accent, RoundedCornerShape(50))
                 )
             }
+        }
+
+        if (showMiniMap && canvasSize.width > 0 && canvasSize.height > 0) {
+            MiniMap(
+                nodes = snapshot.nodes,
+                zoom = zoom,
+                pan = pan,
+                canvasW = canvasSize.width.toFloat(),
+                canvasH = canvasSize.height.toFloat(),
+                modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun MiniMap(
+    nodes: List<Node>,
+    zoom: Float,
+    pan: Offset,
+    canvasW: Float,
+    canvasH: Float,
+    modifier: Modifier = Modifier
+) {
+    if (nodes.isEmpty()) return
+    val minX = nodes.minOf { it.x }
+    val minY = nodes.minOf { it.y }
+    val maxX = nodes.maxOf { it.x } + NODE_W_DP
+    val maxY = nodes.maxOf { it.y } + NODE_H_DP
+    val spanX = (maxX - minX).coerceAtLeast(1f)
+    val spanY = (maxY - minY).coerceAtLeast(1f)
+    Box(
+        modifier = modifier
+            .size(width = 108.dp, height = 73.dp)
+            .clip(RoundedCornerShape(13.dp))
+            .background(Color(0xF5FFFDF8))
+            .border(1.dp, Line, RoundedCornerShape(13.dp))
+    ) {
+        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize().padding(6.dp)) {
+            val s = minOf(size.width / spanX, size.height / spanY)
+            fun mx(gx: Float) = (gx - minX) * s
+            fun my(gy: Float) = (gy - minY) * s
+            nodes.forEach { n ->
+                drawRect(
+                    color = Color(n.type.accent).copy(alpha = 0.85f),
+                    topLeft = Offset(mx(n.x), my(n.y)),
+                    size = androidx.compose.ui.geometry.Size((NODE_W_DP * s).coerceAtLeast(3f), (NODE_H_DP * s).coerceAtLeast(2f))
+                )
+            }
+            val vpLeft = (-pan.x) / zoom
+            val vpTop = (-pan.y) / zoom
+            val vpW = (canvasW / zoom)
+            val vpH = (canvasH / zoom)
+            drawRect(
+                color = Accent,
+                topLeft = Offset(mx(vpLeft), my(vpTop)),
+                size = androidx.compose.ui.geometry.Size(vpW * s, vpH * s),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f)
+            )
         }
     }
 }
