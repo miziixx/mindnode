@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,8 +21,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.PathEffect
@@ -132,7 +135,7 @@ private fun NodeCard(
     }
     Box(
         modifier = Modifier
-            .absoluteOffsetPx(node.x * zoom + pan.x, node.y * zoom + pan.y)
+            .offset { IntOffset((node.x * zoom + pan.x).toInt(), (node.y * zoom + pan.y).toInt()) }
             .width(188.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(if (node.isDraft) bg else bg.copy(alpha = 0.98f))
@@ -191,13 +194,3 @@ private fun NodeCard(
         }
     }
 }
-
-// ---- tiny modifiers ----
-
-private fun Modifier.absoluteOffsetPx(x: Float, y: Float): Modifier =
-    this.then(androidx.compose.foundation.layout.offset {
-        androidx.compose.ui.unit.IntOffset(x.toInt(), y.toInt())
-    })
-
-private fun Modifier.alpha(value: Float): Modifier =
-    this.then(androidx.compose.ui.draw.alpha(value))
