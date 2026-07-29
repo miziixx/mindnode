@@ -29,16 +29,20 @@ echo "sdk.dir=/path/to/Android/sdk" > local.properties
 - compileSdk 34 / minSdk 24 / targetSdk 34, JDK 17, Gradle 8.7, AGP 8.5.2, Kotlin 1.9.24
 - 필요한 SDK 구성요소: `platforms;android-34`, `build-tools;34.0.0`
 
-> ⚠️ **이 작업이 생성된 원격 실행 환경에서는 디버그 APK를 실제로 빌드하지 못했습니다.**
-> 환경의 egress 정책이 Android SDK/AGP 배포 호스트인 `dl.google.com`(및
-> `maven.google.com` 리다이렉트 대상)을 403으로 차단합니다. 따라서 platform·build-tools
-> (aapt2, d8 등)와 Android Gradle Plugin을 받을 수 없어 `assembleDebug` 단계 자체가
-> 불가능했습니다. 정책 거부는 우회하지 않는 것이 규정이라 우회 시도는 하지 않았습니다.
-> **Android SDK가 정상적으로 접근 가능한 환경에서는 위 명령으로 빌드됩니다.**
->
-> 대신 SDK가 필요 없는 **순수 로직·데이터·설정·AI·DB 레이어는 Kotlin 컴파일러로 직접
-> 컴파일 검증**했고, **핵심 단위 테스트 15개를 실제로 실행하여 전부 통과**시켰습니다
-> (아래 "검증 상태" 참고).
+### GitHub Actions로 빌드된 APK 다운로드
+
+`.github/workflows/build-apk.yml`가 push마다 GitHub 러너(Android SDK 제공)에서
+단위 테스트 → 디버그 APK 빌드 → Release 발행을 수행합니다. **최신 디버그 APK는
+아래에서 바로 내려받을 수 있습니다:**
+
+- **Release**: https://github.com/miziixx/mindnode/releases/tag/debug-latest
+  → `thoughtgraph-debug.apk`
+- 또는 각 Actions 실행의 `thoughtgraph-debug-apk` 아티팩트
+
+> ℹ️ 이 세션의 원격 실행 환경 자체는 egress 정책이 Android SDK 배포 호스트
+> `dl.google.com`(및 `maven.google.com` 리다이렉트 대상)을 403으로 차단하여 로컬에서
+> `assembleDebug`를 실행할 수 없었습니다. 그래서 빌드는 GitHub Actions에서 수행하도록
+> 구성했고, 위 워크플로가 **실제로 APK 빌드에 성공**했습니다(단위 테스트 포함 전 단계 통과).
 
 ---
 
@@ -49,10 +53,10 @@ echo "sdk.dir=/path/to/Android/sdk" > local.properties
 | `data/Models`, `localtools/ThinkingTools`, `exportimport/GraphSerializer` | kotlinc 컴파일 + JUnit 15개 실행 | ✅ 통과 |
 | `data/local/GraphDatabase`, `data/repo/GraphRepository` | kotlinc (android.jar) 컴파일 | ✅ 통과 |
 | `settings/*`, `ai/AiClient` | kotlinc (android.jar) 컴파일 | ✅ 통과 |
-| `ui/**` (Jetpack Compose) | 컴파일러/에뮬레이터 미검증 (SDK 차단) | ⚠️ 코드 리뷰만 |
+| `ui/**` (Jetpack Compose) | GitHub Actions에서 `assembleDebug` 빌드 | ✅ 통과 |
 
-Compose UI는 Compose 컴파일러 플러그인과 AndroidX 라이브러리가 필요해 이 환경에서
-컴파일할 수 없었습니다. SDK가 있는 환경에서 최종 빌드 시 확인이 필요합니다.
+전체 앱은 GitHub Actions(Android SDK)에서 단위 테스트와 디버그 APK 빌드가 모두
+성공했습니다.
 
 ---
 
@@ -119,9 +123,10 @@ Anthropic/OpenAI/Gemini/사용자지정, 키 표시·숨김, 모델 ID 직접 �
 ---
 
 ## 남은 제한사항
-1. **디버그 APK 빌드 미완료** — 원격 환경의 `dl.google.com` egress 차단 때문. SDK 접근 가능
-   환경에서 `./gradlew assembleDebug` 로 빌드 필요.
-2. **Compose UI 컴파일러 미검증** — 동일 사유. 최종 빌드 시 확인 권장.
+1. 디버그 APK는 GitHub Actions에서 빌드되어 Release로 제공됩니다. 이 세션의 원격 환경
+   자체는 `dl.google.com` egress 차단으로 로컬 `assembleDebug`를 실행할 수 없습니다.
+2. UI는 CI 빌드로 컴파일까지 검증되었으나 **에뮬레이터/실기기 런타임 테스트는 미수행**입니다.
+   실제 상호작용(드래그·제스처 등)은 기기에서 확인이 필요합니다.
 3. 가져오기는 파일 피커 대신 **텍스트 붙여넣기** 방식으로 구현(미리보기·중복/교체 선택 포함).
    SAF(문서 피커) 연동은 후속 확장 지점.
 4. 다크 모드는 요구사항대로 이번 범위에서 제외.
