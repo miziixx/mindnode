@@ -74,6 +74,10 @@ fun GraphCanvas(
     val nodeHpx = with(density) { NODE_H_DP.dp.toPx() }
     var canvasSize by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
 
+    // Latest zoom/pan read inside long-lived gesture lambdas (avoids stale capture).
+    val curZoom by androidx.compose.runtime.rememberUpdatedState(zoom)
+    val curPan by androidx.compose.runtime.rememberUpdatedState(pan)
+
     // Live connection-drag state (screen-space endpoint of the in-progress link).
     var linkFrom by remember { mutableStateOf<String?>(null) }
     var linkTo by remember { mutableStateOf<Offset?>(null) }
@@ -92,21 +96,25 @@ fun GraphCanvas(
             .clip(RoundedCornerShape(24.dp))
             .background(Color(0xFFFAF7F0))
             .onSizeChanged { canvasSize = it }
-            // Tap on empty space: single = clear, double = add node at point (graph coords).
-            .pointerInput(zoom, pan) {
+            // Pinch to zoom + one/two-finger drag to pan (single pointerInput so the
+            // transform handler also owns pan). Uses latest zoom/pan each event.
+            .pointerInput(Unit) {
+                detectTransformGestures { centroid, panChange, zoomChange, _ ->
+                    val z = curZoom
+                    val newZoom = (z * zoomChange).coerceIn(0.4f, 1.8f)
+                    // Keep the pinch centroid stable while zooming, then apply pan.
+                    val adjusted = curPan + (centroid - centroid * (newZoom / z)) + panChange
+                    onZoomPan(newZoom, adjusted)
+                }
+            }
+            // Tap on empty space: single = clear selection, double = add node here.
+            .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { onClearSelection() },
                     onDoubleTap = { pos ->
-                        onAddNodeAt((pos.x - pan.x) / zoom, (pos.y - pan.y) / zoom)
+                        onAddNodeAt((pos.x - curPan.x) / curZoom, (pos.y - curPan.y) / curZoom)
                     }
                 )
-            }
-            // Two-finger pinch to zoom and drag to pan the whole stage.
-            .pointerInput(Unit) {
-                detectTransformGestures { _, panChange, zoomChange, _ ->
-                    val newZoom = (zoom * zoomChange).coerceIn(0.4f, 1.8f)
-                    onZoomPan(newZoom, pan + panChange)
-                }
             }
     ) {
         // Connections (dashed bezier curves, matching the prototype) + in-progress link.

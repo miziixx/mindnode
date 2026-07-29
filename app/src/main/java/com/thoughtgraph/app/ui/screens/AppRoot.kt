@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -213,7 +214,10 @@ fun AppRoot(viewModel: AppViewModel, state: UiState) {
                             onAdd = {
                                 if (quickText.isNotBlank()) { viewModel.addNode(quickText.trim(), quickType); quickText = "" }
                             },
-                            modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp)
+                            // Lift above the bottom nav on phones so they don't overlap.
+                            modifier = Modifier.align(Alignment.BottomCenter)
+                                .navigationBarsPadding()
+                                .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = if (wide) 12.dp else 78.dp)
                         )
                     }
                 }
@@ -234,7 +238,7 @@ fun AppRoot(viewModel: AppViewModel, state: UiState) {
         if (!wide && !state.focusMode) {
             BottomNav(
                 current = state.mainView,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp),
+                modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(8.dp),
                 onGraph = { viewModel.setMainView(MainView.GRAPH) },
                 onTools = { drawerOpen = true },
                 onExport = { exportOpen = true },
