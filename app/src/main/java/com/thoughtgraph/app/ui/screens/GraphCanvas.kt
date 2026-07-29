@@ -45,8 +45,8 @@ import com.thoughtgraph.app.ui.theme.Muted
 import com.thoughtgraph.app.ui.theme.Panel
 import com.thoughtgraph.app.ui.theme.Purple
 
-private const val NODE_W_DP = 172f
-private const val NODE_H_DP = 92f
+private const val NODE_W_DP = 150f
+private const val NODE_H_DP = 80f
 
 /**
  * Pannable, zoomable graph canvas.
@@ -106,7 +106,7 @@ fun GraphCanvas(
             val maxY = live.maxOf { it.y } + nodeHpx
             val cw = canvasSize.width.toFloat()
             val ch = canvasSize.height.toFloat()
-            val z = (minOf(cw / (maxX - minX), ch / (maxY - minY)) * 0.88f).coerceIn(0.35f, 1.2f)
+            val z = (minOf(cw / (maxX - minX), ch / (maxY - minY)) * 0.82f).coerceIn(0.3f, 0.85f)
             val px = (cw - (maxX - minX) * z) / 2f - minX * z
             val py = (ch - (maxY - minY) * z) / 2f - minY * z
             onZoomPan(z, Offset(px, py))
@@ -248,16 +248,30 @@ private fun NodeCard(
                     onDragEnd = { onMove(node.id, node.x, node.y, true) }
                 )
             }
-            .padding(12.dp)
+            .padding(10.dp)
             .alpha(if (node.isDraft) 0.72f else 1f)
     ) {
         Column {
-            Box(Modifier.clip(RoundedCornerShape(999.dp)).background(accent.copy(alpha = 0.10f)).padding(horizontal = 7.dp, vertical = 4.dp)) {
-                Text(if (node.isDraft) "보조 제안" else node.type.label, color = accent, fontSize = 9.sp, fontWeight = FontWeight.Black)
+            Box(Modifier.clip(RoundedCornerShape(999.dp)).background(accent.copy(alpha = 0.10f)).padding(horizontal = 6.dp, vertical = 3.dp)) {
+                Text(if (node.isDraft) "보조 제안" else node.type.label, color = accent, fontSize = 8.sp, fontWeight = FontWeight.Black)
             }
-            Text(node.title.ifBlank { "제목 없음" }, fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 8.dp))
+            Text(
+                node.title.ifBlank { "제목 없음" },
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Black,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 6.dp)
+            )
             if (node.description.isNotBlank()) {
-                Text(node.description, color = Muted, fontSize = 10.sp, modifier = Modifier.padding(top = 5.dp))
+                Text(
+                    node.description,
+                    color = Muted,
+                    fontSize = 9.sp,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
             }
         }
     }

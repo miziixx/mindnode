@@ -150,7 +150,8 @@ fun AppRoot(viewModel: AppViewModel, state: UiState) {
                 onRedo = viewModel::redo,
                 onSearch = { searchOpen = !searchOpen },
                 onFocus = viewModel::toggleFocus,
-                onExport = { exportOpen = true }
+                onExport = { exportOpen = true },
+                compact = !wide
             )
 
             if (searchOpen) SearchBar(state.searchQuery, viewModel::setSearch)
@@ -219,7 +220,7 @@ fun AppRoot(viewModel: AppViewModel, state: UiState) {
                             // Lift above the bottom nav on phones so they don't overlap.
                             modifier = Modifier.align(Alignment.BottomCenter)
                                 .navigationBarsPadding()
-                                .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = if (wide) 12.dp else 78.dp)
+                                .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = if (wide) 12.dp else 88.dp)
                         )
                     }
                 }

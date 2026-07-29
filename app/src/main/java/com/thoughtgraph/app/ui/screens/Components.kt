@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -63,7 +64,8 @@ fun TopBar(
     onRedo: () -> Unit,
     onSearch: () -> Unit,
     onFocus: () -> Unit,
-    onExport: () -> Unit
+    onExport: () -> Unit,
+    compact: Boolean = false
 ) {
     Row(
         modifier = Modifier
@@ -72,14 +74,14 @@ fun TopBar(
             .clip(RoundedCornerShape(18.dp))
             .background(Panel)
             .border(1.dp, Line, RoundedCornerShape(18.dp))
-            .padding(horizontal = 8.dp),
+            .padding(horizontal = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onMenu) { Icon(Icons.Filled.Menu, contentDescription = "메뉴 열기") }
         Box(
-            modifier = Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(Accent),
+            modifier = Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(Accent),
             contentAlignment = Alignment.Center
-        ) { Text("노", color = Color.White, fontWeight = FontWeight.Black) }
+        ) { Text("노", color = Color.White, fontWeight = FontWeight.Black, fontSize = 14.sp) }
         Spacer(Modifier.width(8.dp))
         BasicTextField(
             value = title,
@@ -88,19 +90,25 @@ fun TopBar(
             textStyle = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Black, color = TextMain),
             modifier = Modifier.weight(1f)
         )
-        if (saving) {
-            Text("저장 중…", color = Muted, fontSize = 9.sp)
-        } else {
-            Box(
-                modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(GreenSoft).padding(horizontal = 8.dp, vertical = 4.dp)
-            ) { Text("기기에 저장됨", color = Green, fontSize = 9.sp, fontWeight = FontWeight.Black) }
+        // On phones, drop the saved badge and the export button (export lives in the
+        // bottom nav) so the title has room and nothing clips.
+        if (!compact) {
+            if (saving) {
+                Text("저장 중…", color = Muted, fontSize = 9.sp)
+            } else {
+                Box(
+                    modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(GreenSoft).padding(horizontal = 8.dp, vertical = 4.dp)
+                ) { Text("기기에 저장됨", color = Green, fontSize = 9.sp, fontWeight = FontWeight.Black) }
+            }
         }
         IconButton(onClick = onUndo, enabled = canUndo) { Icon(Icons.Filled.Undo, contentDescription = "실행 취소") }
         IconButton(onClick = onRedo, enabled = canRedo) { Icon(Icons.Filled.Redo, contentDescription = "다시 실행") }
         IconButton(onClick = onSearch) { Icon(Icons.Filled.Search, contentDescription = "검색") }
-        Box(
-            modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Accent).clickable(onClick = onExport).padding(horizontal = 12.dp, vertical = 8.dp)
-        ) { Text("내보내기", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black) }
+        if (!compact) {
+            Box(
+                modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Accent).clickable(onClick = onExport).padding(horizontal = 12.dp, vertical = 8.dp)
+            ) { Text("내보내기", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black) }
+        }
     }
 }
 
@@ -240,11 +248,12 @@ fun BottomNav(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp)
+            .height(66.dp)
             .clip(RoundedCornerShape(18.dp))
             .background(Panel)
             .border(1.dp, Line, RoundedCornerShape(18.dp))
             .padding(5.dp),
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         BottomItem("⌘", "그래프", current == MainView.GRAPH, Modifier.weight(1f), onGraph)
@@ -258,14 +267,17 @@ fun BottomNav(
 private fun BottomItem(icon: String, label: String, active: Boolean, modifier: Modifier, onClick: () -> Unit) {
     Column(
         modifier = modifier
+            .fillMaxHeight()
             .clip(RoundedCornerShape(13.dp))
             .background(if (active) AccentSoft else Color.Transparent)
             .clickable(onClick = onClick)
-            .padding(vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Text(icon, fontSize = 16.sp, color = if (active) AccentDark else Muted)
-        Text(label, fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (active) AccentDark else Muted)
+        Text(icon, fontSize = 17.sp, color = if (active) AccentDark else Muted)
+        Spacer(Modifier.height(3.dp))
+        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, color = if (active) AccentDark else Muted, maxLines = 1)
     }
 }
 
