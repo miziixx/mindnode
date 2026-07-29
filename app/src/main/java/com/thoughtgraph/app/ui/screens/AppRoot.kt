@@ -68,6 +68,7 @@ fun AppRoot(viewModel: AppViewModel, state: UiState) {
     var pendingConnectFrom by remember { mutableStateOf<String?>(null) }
     var zoom by remember { mutableStateOf(1f) }
     var pan by remember { mutableStateOf(Offset.Zero) }
+    var fitRequest by remember { mutableStateOf(0) }
     var quickText by remember { mutableStateOf("") }
     var quickType by remember { mutableStateOf(NodeType.IDEA) }
 
@@ -182,7 +183,8 @@ fun AppRoot(viewModel: AppViewModel, state: UiState) {
                             onOpenNode = { editorNodeId = it },
                             onNodeMenu = { menuNodeId = it },
                             onConnect = { s, t -> viewModel.connect(s, t) },
-                            showMiniMap = viewModel.settings.showMiniMap && wide
+                            showMiniMap = viewModel.settings.showMiniMap && wide,
+                            fitRequest = fitRequest
                         )
                         MainView.LIST -> Box(Modifier.fillMaxSize().clip(RoundedCornerShape(24.dp)).background(Panel)) {
                             ListView(state.snapshot, state.searchQuery, viewModel::select)
@@ -196,8 +198,8 @@ fun AppRoot(viewModel: AppViewModel, state: UiState) {
                         ZoomControls(
                             zoom = zoom,
                             onZoomIn = { zoom = (zoom + 0.1f).coerceAtMost(1.8f) },
-                            onZoomOut = { zoom = (zoom - 0.1f).coerceAtLeast(0.4f) },
-                            onFit = { zoom = 1f; pan = Offset.Zero },
+                            onZoomOut = { zoom = (zoom - 0.1f).coerceAtLeast(0.35f) },
+                            onFit = { fitRequest++ },
                             modifier = Modifier.align(Alignment.TopEnd).padding(12.dp)
                         )
                         if (pendingConnectFrom != null) {
