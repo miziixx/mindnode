@@ -9,13 +9,14 @@ import java.io.File
 /** Real file read/write/share backing the export & import features. */
 object FileOps {
 
-    fun writeToUri(context: Context, uri: Uri, content: String): Boolean = try {
-        context.contentResolver.openOutputStream(uri)?.use { out ->
-            out.write(content.toByteArray(Charsets.UTF_8))
-        } ?: return false
-        true
-    } catch (e: Exception) {
-        false
+    fun writeToUri(context: Context, uri: Uri, content: String): Boolean {
+        return try {
+            val stream = context.contentResolver.openOutputStream(uri) ?: return false
+            stream.use { it.write(content.toByteArray(Charsets.UTF_8)) }
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
     fun readFromUri(context: Context, uri: Uri): String? = try {
