@@ -77,6 +77,37 @@ def apply_ios():
     else:
         print("Info.plist already has UIBackgroundModes")
 
+    # AVAudioSourceNode 는 iOS 13+ 필요 → 배포 타깃 상향(기본 12.0).
+    pbxproj = os.path.join(ROOT, "ios", "Runner.xcodeproj", "project.pbxproj")
+    if os.path.exists(pbxproj):
+        with open(pbxproj, "r", encoding="utf-8") as f:
+            pb = f.read()
+        for old in ("IPHONEOS_DEPLOYMENT_TARGET = 12.0;",
+                    "IPHONEOS_DEPLOYMENT_TARGET = 11.0;"):
+            pb = pb.replace(old, "IPHONEOS_DEPLOYMENT_TARGET = 13.0;")
+        with open(pbxproj, "w", encoding="utf-8") as f:
+            f.write(pb)
+        print("patched project.pbxproj (IPHONEOS_DEPLOYMENT_TARGET = 13.0)")
+
+    podfile = os.path.join(ROOT, "ios", "Podfile")
+    if os.path.exists(podfile):
+        lines = []
+        set_platform = False
+        with open(podfile, "r", encoding="utf-8") as f:
+            for line in f:
+                stripped = line.strip()
+                if stripped.startswith("platform :ios") or \
+                   stripped.startswith("# platform :ios"):
+                    lines.append("platform :ios, '13.0'\n")
+                    set_platform = True
+                else:
+                    lines.append(line)
+        if not set_platform:
+            lines.insert(0, "platform :ios, '13.0'\n")
+        with open(podfile, "w", encoding="utf-8") as f:
+            f.writelines(lines)
+        print("patched Podfile (platform :ios, '13.0')")
+
 
 def main():
     ap = argparse.ArgumentParser()
