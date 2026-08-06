@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 1,
+  "presets": [
+    {
+      "schemaVersion": 1,
+      "id": "uplift_mind",
+      "title": "마음 끌어올리기",
+      "category": "uplift",
+      "symbolicUse": true,
+      "fadeInSec": 5,
+      "fadeOutSec": 20,
+      "masterGainDb": -12,
+      "isBuiltIn": true,
+      "stages": [
+        {
+          "id": "main",
+          "title": "마음 끌어올리기",
+          "durationSec": 900,
+          "primaryTone": { "enabled": true, "frequencyHz": 528.0, "gainDb": -26, "pan": 0 },
+          "drone": { "enabled": true, "centerHz": 528.0, "gainDb": -24, "movementRateHz": 0.05, "stereoWidth": 0.25 },
+          "secondaryTone": { "enabled": false, "frequencyHz": 741.0, "gainDb": -34, "pan": 0 },
+          "binaural": { "enabled": false, "carrierHz": 220.0, "beatHz": 10.0, "invert": false, "gainDb": -30 },
+          "pulse": { "enabled": false, "frequencyHz": 528.0, "rateHz": 7.83, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+          "natureAssetId": "forest_morning",
+          "padAssetId": "warm_air",
+          "chimeAssetId": null,
+          "chimeIntervalSec": 0,
+          "transitionDurationSec": 1.5
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "id": "energize_wake",
+      "title": "활력 깨우기",
+      "category": "energize",
+      "symbolicUse": true,
+      "fadeInSec": 4,
+      "fadeOutSec": 15,
+      "masterGainDb": -12,
+      "isBuiltIn": true,
+      "stages": [
+        {
+          "id": "main",
+          "title": "활력 깨우기",
+          "durationSec": 600,
+          "primaryTone": { "enabled": true, "frequencyHz": 528.0, "gainDb": -26, "pan": 0 },
+          "drone": { "enabled": true, "centerHz": 528.0, "gainDb": -25, "movementRateHz": 0.07, "stereoWidth": 0.2 },
+          "secondaryTone": { "enabled": true, "frequencyHz": 741.0, "gainDb": -36, "pan": 0 },
+          "binaural": { "enabled": false, "carrierHz": 220.0, "beatHz": 10.0, "invert": false, "gainDb": -30 },
+          "pulse": { "enabled": true, "frequencyHz": 528.0, "rateHz": 16.0, "depth": 0.15, "stereoMode": "center", "gainDb": -30 },
+          "natureAssetId": "forest_morning",
+          "padAssetId": "soft_light",
+          "chimeAssetId": null,
+          "chimeIntervalSec": 0,
+          "transitionDurationSec": 1.5
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "id": "abundance_ritual",
+      "title": "풍요 · 돈 들어오는 의식",
+      "category": "abundance",
+      "symbolicUse": true,
+      "fadeInSec": 5,
+      "fadeOutSec": 20,
+      "masterGainDb": -12,
+      "isBuiltIn": true,
+      "stages": [
+        {
+          "id": "main",
+          "title": "풍요 의식",
+          "durationSec": 1200,
+          "primaryTone": { "enabled": false, "frequencyHz": 432.0, "gainDb": -30, "pan": 0 },
+          "drone": { "enabled": true, "centerHz": 432.0, "gainDb": -24, "movementRateHz": 0.05, "stereoWidth": 0.25 },
+          "secondaryTone": { "enabled": true, "frequencyHz": 888.0, "gainDb": -36, "pan": 0 },
+          "binaural": { "enabled": false, "carrierHz": 220.0, "beatHz": 10.0, "invert": false, "gainDb": -30 },
+          "pulse": { "enabled": true, "frequencyHz": 432.0, "rateHz": 8.8, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+          "natureAssetId": null,
+          "padAssetId": "warm_air",
+          "chimeAssetId": "bowl_high",
+          "chimeIntervalSec": 0,
+          "transitionDurationSec": 1.5
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "id": "cleanse_negative",
+      "title": "부정적 에너지 정화",
+      "category": "cleanse",
+      "symbolicUse": true,
+      "fadeInSec": 4,
+      "fadeOutSec": 12,
+      "masterGainDb": -12,
+      "isBuiltIn": true,
+      "stages": [
+        {
+          "id": "s1",
+          "title": "396Hz · 해방",
+          "durationSec": 180,
+          "primaryTone": { "enabled": true, "frequencyHz": 396.0, "gainDb": -26, "pan": 0 },
+          "drone": { "enabled": true, "centerHz": 396.0, "gainDb": -25, "movementRateHz": 0.04, "stereoWidth": 0.2 },
+          "secondaryTone": { "enabled": false, "frequencyHz": 741.0, "gainDb": -34, "pan": 0 },
+          "binaural": { "enabled": false, "carrierHz": 220.0, "beatHz": 10.0, "invert": false, "gainDb": -30 },
+          "pulse": { "enabled": false, "frequencyHz": 396.0, "rateHz": 7.83, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+          "natureAssetId": null,
+          "padAssetId": "grounding_dark",
+          "chimeAssetId": null,
+          "chimeIntervalSec": 0,
+          "transitionDurationSec": 2.0
+        },
+        {
+          "id": "s2",
+          "title": "417Hz · 전환",
+          "durationSec": 300,
+          "primaryTone": { "enabled": true, "frequencyHz": 417.0, "gainDb": -26, "pan": 0 },
+          "drone": { "enabled": true, "centerHz": 417.0, "gainDb": -25, "movementRateHz": 0.05, "stereoWidth": 0.2 },
+          "secondaryTone": { "enabled": false, "frequencyHz": 741.0, "gainDb": -34, "pan": 0 },
+          "binaural": { "enabled": false, "carrierHz": 220.0, "beatHz": 10.0, "invert": false, "gainDb": -30 },
+          "pulse": { "enabled": false, "frequencyHz": 417.0, "rateHz": 7.83, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+          "natureAssetId": "stream_soft",
+          "padAssetId": "warm_air",
+          "chimeAssetId": null,
+          "chimeIntervalSec": 0,
+          "transitionDurationSec": 2.0
+        },
+        {
+          "id": "s3",
+          "title": "741Hz · 정리",
+          "durationSec": 300,
+          "primaryTone": { "enabled": true, "frequencyHz": 741.0, "gainDb": -26, "pan": 0 },
+          "drone": { "enabled": true, "centerHz": 741.0, "gainDb": -26, "movementRateHz": 0.06, "stereoWidth": 0.25 },
+          "secondaryTone": { "enabled": false, "frequencyHz": 963.0, "gainDb": -36, "pan": 0 },
+          "binaural": { "enabled": false, "carrierHz": 220.0, "beatHz": 10.0, "invert": false, "gainDb": -30 },
+          "pulse": { "enabled": false, "frequencyHz": 741.0, "rateHz": 7.83, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+          "natureAssetId": null,
+          "padAssetId": "crystal_air",
+          "chimeAssetId": "bowl_high",
+          "chimeIntervalSec": 0,
+          "transitionDurationSec": 2.0
+        },
+        {
+          "id": "s4",
+          "title": "차임과 무음 · 마무리",
+          "durationSec": 120,
+          "primaryTone": { "enabled": false, "frequencyHz": 396.0, "gainDb": -26, "pan": 0 },
+          "drone": { "enabled": false, "centerHz": 396.0, "gainDb": -25, "movementRateHz": 0.04, "stereoWidth": 0.2 },
+          "secondaryTone": { "enabled": false, "frequencyHz": 741.0, "gainDb": -34, "pan": 0 },
+          "binaural": { "enabled": false, "carrierHz": 220.0, "beatHz": 10.0, "invert": false, "gainDb": -30 },
+          "pulse": { "enabled": false, "frequencyHz": 396.0, "rateHz": 7.83, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+          "natureAssetId": null,
+          "padAssetId": null,
+          "chimeAssetId": "session_end",
+          "chimeIntervalSec": 40,
+          "transitionDurationSec": 2.0
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "id": "meditation_deep",
+      "title": "깊은 명상",
+      "category": "meditation",
+      "symbolicUse": true,
+      "fadeInSec": 6,
+      "fadeOutSec": 20,
+      "masterGainDb": -12,
+      "isBuiltIn": true,
+      "stages": [
+        {
+          "id": "main",
+          "title": "명상",
+          "durationSec": 1200,
+          "primaryTone": { "enabled": true, "frequencyHz": 432.0, "gainDb": -28, "pan": 0 },
+          "drone": { "enabled": true, "centerHz": 432.0, "gainDb": -24, "movementRateHz": 0.04, "stereoWidth": 0.3 },
+          "secondaryTone": { "enabled": false, "frequencyHz": 864.0, "gainDb": -36, "pan": 0 },
+          "binaural": { "enabled": false, "carrierHz": 216.0, "beatHz": 6.0, "invert": false, "gainDb": -32 },
+          "pulse": { "enabled": false, "frequencyHz": 432.0, "rateHz": 7.83, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+          "natureAssetId": "rain_soft",
+          "padAssetId": "deep_space",
+          "chimeAssetId": null,
+          "chimeIntervalSec": 0,
+          "transitionDurationSec": 1.5
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "id": "reiki_self",
+      "title": "레이키 · 셀프",
+      "category": "reiki",
+      "symbolicUse": true,
+      "fadeInSec": 6,
+      "fadeOutSec": 15,
+      "masterGainDb": -12,
+      "isBuiltIn": true,
+      "stages": [
+        {
+          "id": "main",
+          "title": "셀프 레이키",
+          "durationSec": 2700,
+          "primaryTone": { "enabled": false, "frequencyHz": 528.0, "gainDb": -30, "pan": 0 },
+          "drone": { "enabled": true, "centerHz": 432.0, "gainDb": -24, "movementRateHz": 0.04, "stereoWidth": 0.3 },
+          "secondaryTone": { "enabled": true, "frequencyHz": 528.0, "gainDb": -36, "pan": 0 },
+          "binaural": { "enabled": false, "carrierHz": 216.0, "beatHz": 6.0, "invert": false, "gainDb": -32 },
+          "pulse": { "enabled": true, "frequencyHz": 432.0, "rateHz": 7.83, "depth": 0.18, "stereoMode": "center", "gainDb": -30 },
+          "natureAssetId": null,
+          "padAssetId": "warm_air",
+          "chimeAssetId": "bowl_low",
+          "chimeIntervalSec": 300,
+          "transitionDurationSec": 1.5
+        }
+      ]
+    }
+  ]
+}

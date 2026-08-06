@@ -1,0 +1,19 @@
+{
+  "description": "Android(Kotlin)·iOS(Swift)·Python 공통 입력 fixture. 각 플랫폼이 동일 입력으로 PCM을 생성해 내보내면 analyzer.py로 대조한다.",
+  "engineVersion": "mindsound-dsp-v1",
+  "cases": [
+    { "name": "sine_432", "type": "sine", "sampleRate": 48000, "durationFrames": 480000, "frequencyHz": 432.0, "gain": 0.05, "initialPhase": 0.0 },
+    { "name": "binaural_220_10", "type": "binaural", "sampleRate": 48000, "durationFrames": 480000, "carrierHz": 220.0, "beatHz": 10.0, "gain": 0.05 },
+    { "name": "pulse_432_7p83", "type": "pulse", "sampleRate": 48000, "durationFrames": 480000, "carrierHz": 432.0, "rateHz": 7.83, "depth": 0.5, "gain": 0.05 },
+    { "name": "drone_432", "type": "drone", "sampleRate": 48000, "durationFrames": 480000, "centerHz": 432.0, "gain": 0.05 },
+    { "name": "ramp_432_528", "type": "freq_ramp", "sampleRate": 48000, "durationFrames": 144000, "fromHz": 432.0, "toHz": 528.0, "rampMs": 1500, "gain": 0.05 }
+  ],
+  "tolerances": {
+    "frequencyHzBelow1k": 0.05,
+    "frequencyPctAbove1k": 0.01,
+    "beatHz": 0.05,
+    "pulseRateHz": 0.03,
+    "dcOffset": 1e-5,
+    "phaseSampleError": 1e-5
+  }
+}

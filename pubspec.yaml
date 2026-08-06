@@ -1,0 +1,30 @@
+name: mindsound
+description: "마인드사운드 — 개인용 오프라인 주파수·명상 사운드 앱"
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.2
+  path_provider: ^2.1.3
+  file_picker: ^8.0.0+1
+  share_plus: ^9.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/presets/default_presets.json
+    - assets/presets/chakra_presets.json
+    - assets/audio/nature/
+    - assets/audio/pads/
+    - assets/audio/chimes/
