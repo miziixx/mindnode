@@ -46,7 +46,9 @@ class SessionScheduler {
   /// 인터벌 차임은 스테이지 시작 기준. 일시정지 구간은 호출자가 elapsed에서 제외한다.
   List<({int atSec, String? assetId})> chimesBetween(int fromSec, int toSec) {
     final events = <({int atSec, String? assetId})>[];
-    for (var sec = fromSec; sec < toSec; sec++) {
+    // 세션 종료 시점 이후로는 예약 차임이 남지 않는다.
+    final end = toSec < totalDurationSec ? toSec : totalDurationSec;
+    for (var sec = fromSec; sec < end; sec++) {
       final idx = stageIndexAt(sec);
       final stage = stages[idx];
       if (stage.chimeIntervalSec <= 0) continue;

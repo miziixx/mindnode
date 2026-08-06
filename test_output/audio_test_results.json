@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-06T22:11:55.347627+00:00",
+  "generatedAt": "2026-08-06T23:45:16.373314+00:00",
   "engineVersion": "mindsound-dsp-v1",
   "summary": {
     "pass": 132,
@@ -924,7 +924,7 @@
       "clickCount": 0,
       "rmsDbfs": -29.0109,
       "peakDbfs": -26.0,
-      "dcOffset": 9.828854743678471e-07,
+      "dcOffset": 9.829312892440472e-07,
       "clippedSamples": 0,
       "nanSamples": 0,
       "infiniteSamples": 0
@@ -969,7 +969,7 @@
       "clickCount": 0,
       "rmsDbfs": -29.0111,
       "peakDbfs": -26.0,
-      "dcOffset": 9.228742810044258e-07,
+      "dcOffset": 9.228655518045141e-07,
       "clippedSamples": 0,
       "nanSamples": 0,
       "infiniteSamples": 0
@@ -999,7 +999,7 @@
       "clickCount": 0,
       "rmsDbfs": -29.01,
       "peakDbfs": -26.0,
-      "dcOffset": 3.396336864079742e-06,
+      "dcOffset": 3.395960509774234e-06,
       "clippedSamples": 0,
       "nanSamples": 0,
       "infiniteSamples": 0
@@ -1014,7 +1014,7 @@
       "clickCount": 0,
       "rmsDbfs": -29.0097,
       "peakDbfs": -26.0,
-      "dcOffset": 3.235924596927559e-06,
+      "dcOffset": 3.235924596927568e-06,
       "clippedSamples": 0,
       "nanSamples": 0,
       "infiniteSamples": 0
@@ -1044,7 +1044,7 @@
       "clickCount": 0,
       "rmsDbfs": -29.0103,
       "peakDbfs": -26.0,
-      "dcOffset": 3.0580982510124286e-06,
+      "dcOffset": 3.0580431281934072e-06,
       "clippedSamples": 0,
       "nanSamples": 0,
       "infiniteSamples": 0
@@ -1059,7 +1059,7 @@
       "clickCount": 0,
       "rmsDbfs": -29.0103,
       "peakDbfs": -26.0,
-      "dcOffset": 1.3443334890638161e-06,
+      "dcOffset": 1.344322330969234e-06,
       "clippedSamples": 0,
       "nanSamples": 0,
       "infiniteSamples": 0
@@ -1119,7 +1119,7 @@
       "clickCount": 0,
       "rmsDbfs": -29.0101,
       "peakDbfs": -26.0,
-      "dcOffset": 3.939965025243471e-06,
+      "dcOffset": 3.9399803090287585e-06,
       "clippedSamples": 0,
       "nanSamples": 0,
       "infiniteSamples": 0
@@ -1134,7 +1134,7 @@
       "clickCount": 0,
       "rmsDbfs": -29.0103,
       "peakDbfs": -26.0,
-      "dcOffset": 1.7348442068795244e-06,
+      "dcOffset": 1.7348442457004835e-06,
       "clippedSamples": 0,
       "nanSamples": 0,
       "infiniteSamples": 0
@@ -1179,7 +1179,7 @@
       "clickCount": 0,
       "rmsDbfs": -29.0101,
       "peakDbfs": -26.0,
-      "dcOffset": 1.3280251999510802e-06,
+      "dcOffset": 1.3279782666793172e-06,
       "clippedSamples": 0,
       "nanSamples": 0,
       "infiniteSamples": 0
@@ -1194,7 +1194,7 @@
       "clickCount": 0,
       "rmsDbfs": -29.0107,
       "peakDbfs": -26.0,
-      "dcOffset": 1.2670196675370576e-06,
+      "dcOffset": 1.2670196669854621e-06,
       "clippedSamples": 0,
       "nanSamples": 0,
       "infiniteSamples": 0
@@ -1209,7 +1209,7 @@
       "clickCount": 0,
       "rmsDbfs": -29.0103,
       "peakDbfs": -26.0,
-      "dcOffset": 5.566816769895183e-07,
+      "dcOffset": 5.566810597671413e-07,
       "clippedSamples": 0,
       "nanSamples": 0,
       "infiniteSamples": 0
@@ -1254,7 +1254,7 @@
       "clickCount": 0,
       "rmsDbfs": -29.01,
       "peakDbfs": -26.0,
-      "dcOffset": 1.015032718724526e-06,
+      "dcOffset": 1.0150627115963889e-06,
       "clippedSamples": 0,
       "nanSamples": 0,
       "infiniteSamples": 0
@@ -1284,7 +1284,7 @@
       "clickCount": 0,
       "rmsDbfs": -29.0103,
       "peakDbfs": -26.0,
-      "dcOffset": 4.2558841718212385e-07,
+      "dcOffset": 4.255890769404213e-07,
       "clippedSamples": 0,
       "nanSamples": 0,
       "infiniteSamples": 0
@@ -1299,7 +1299,7 @@
       "clickCount": 0,
       "rmsDbfs": -29.0107,
       "peakDbfs": -26.0,
-      "dcOffset": -7.68994506635126e-06,
+      "dcOffset": -7.692067636476139e-06,
       "clippedSamples": 0,
       "nanSamples": 0,
       "infiniteSamples": 0
@@ -1329,7 +1329,7 @@
       "clickCount": 0,
       "rmsDbfs": -29.011,
       "peakDbfs": -26.0,
-      "dcOffset": -7.845849477542567e-06,
+      "dcOffset": -7.846121290076953e-06,
       "clippedSamples": 0,
       "nanSamples": 0,
       "infiniteSamples": 0
@@ -1344,7 +1344,7 @@
       "clickCount": 0,
       "rmsDbfs": -29.0106,
       "peakDbfs": -26.0,
-      "dcOffset": -7.5012820443422625e-06,
+      "dcOffset": -7.501474547741077e-06,
       "clippedSamples": 0,
       "nanSamples": 0,
       "infiniteSamples": 0
@@ -1359,7 +1359,7 @@
       "clickCount": 0,
       "rmsDbfs": -29.01,
       "peakDbfs": -26.0,
-      "dcOffset": -3.3193474818163876e-06,
+      "dcOffset": -3.319351128968794e-06,
       "clippedSamples": 0,
       "nanSamples": 0,
       "infiniteSamples": 0

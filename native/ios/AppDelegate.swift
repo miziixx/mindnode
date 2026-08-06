@@ -33,10 +33,11 @@ struct Ramp {
     }
     mutating func snap(_ v: Double) { current = v; target = v; step = 0 }
     mutating func next() -> Double {
-        if step == 0 || (step > 0 && current >= target) || (step < 0 && current <= target) {
-            current = target; step = 0; return current
-        }
+        if step == 0 { return current }
         current += step
+        if (step > 0 && current >= target) || (step < 0 && current <= target) {
+            current = target; step = 0
+        }
         return current
     }
 }

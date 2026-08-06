@@ -43,16 +43,15 @@ class ParamRamp {
     _stepPerSample = 0;
   }
 
-  /// 한 샘플 진행 후 현재값 반환. 오버슈트 방지.
+  /// 한 샘플 진행 후 현재값 반환. 목표를 지나치면 그 샘플에서 클램프(오버슈트 방지).
   double next() {
+    if (_stepPerSample == 0) return current;
+    current += _stepPerSample;
     if ((_stepPerSample > 0 && current >= target) ||
-        (_stepPerSample < 0 && current <= target) ||
-        _stepPerSample == 0) {
+        (_stepPerSample < 0 && current <= target)) {
       current = target;
       _stepPerSample = 0;
-      return current;
     }
-    current += _stepPerSample;
     return current;
   }
 }

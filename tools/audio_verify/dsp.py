@@ -82,11 +82,13 @@ class Ramp:
         s = self._step
         t = self.target
         for i in range(n):
-            if s == 0.0 or (s > 0 and c >= t) or (s < 0 and c <= t):
+            if s == 0.0:
+                out[i] = c
+                continue
+            c += s
+            if (s > 0 and c >= t) or (s < 0 and c <= t):
                 c = t
                 s = 0.0
-            else:
-                c += s
             out[i] = c
         self.current = c
         self._step = s

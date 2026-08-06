@@ -1,8 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-import '../core/design/app_colors.dart';
-
 /// 추상 공명 시각화. **재생 파라미터 기반**이며 실제 FFT 분석이 아니다.
 /// 느린 링 호흡 + 드론 배경광 + 펄스 확대/축소 + 차임 파동.
 /// reduceMotion / 백그라운드일 때 애니메이션을 멈춘다.
