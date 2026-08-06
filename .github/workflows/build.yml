@@ -2,7 +2,9 @@ name: build
 
 on:
   push:
-    branches: ["claude/frequency-meditation-app-7y2qkk"]
+    branches: ["main", "claude/frequency-meditation-app-7y2qkk"]
+  pull_request:
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
