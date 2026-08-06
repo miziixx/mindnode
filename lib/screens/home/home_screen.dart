@@ -12,6 +12,7 @@ import '../../widgets/common.dart';
 import '../../widgets/dialogs.dart';
 import '../../widgets/page_scaffold.dart';
 import '../player/player_screen.dart';
+import '../reiki/reiki_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -45,7 +46,13 @@ class HomeScreen extends StatelessWidget {
             if (preset == null) return const SizedBox.shrink();
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _StatusCard(preset: preset, accent: q.$2),
+              child: _StatusCard(
+                preset: preset,
+                accent: q.$2,
+                // 레이키는 전용 셋업/재생 화면으로 이동.
+                onOpenOverride:
+                    q.$1 == 'reiki_self' ? () => openReiki(context) : null,
+              ),
             );
           }),
         const SizedBox(height: 20),
@@ -104,9 +111,11 @@ class HomeScreen extends StatelessWidget {
 }
 
 class _StatusCard extends StatelessWidget {
-  const _StatusCard({required this.preset, required this.accent});
+  const _StatusCard(
+      {required this.preset, required this.accent, this.onOpenOverride});
   final Preset preset;
   final Color accent;
+  final VoidCallback? onOpenOverride;
 
   String get _meta {
     final s = preset.stages.first;
@@ -128,7 +137,7 @@ class _StatusCard extends StatelessWidget {
     return SurfaceCard(
       color: AppColors.surface2,
       accent: accent,
-      onTap: () => openPresetInPlayer(context, preset),
+      onTap: onOpenOverride ?? () => openPresetInPlayer(context, preset),
       padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
       child: Row(
         children: [
@@ -145,7 +154,7 @@ class _StatusCard extends StatelessWidget {
           const SizedBox(width: 12),
           _PlayPill(
             accent: accent,
-            onTap: () => _quickStart(context, preset),
+            onTap: onOpenOverride ?? () => _quickStart(context, preset),
           ),
         ],
       ),

@@ -1,0 +1,68 @@
+name: build
+
+on:
+  push:
+    branches: ["claude/frequency-meditation-app-7y2qkk"]
+  workflow_dispatch:
+
+jobs:
+  # 순수 DSP 오프라인 검증(빌드 전 관문). 실패 시 이후 빌드 잡도 실행되지 않음.
+  audio-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy
+      - name: Run offline audio verification
+        run: |
+          cd tools/audio_verify
+          python run_tests.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: audio-verification
+          path: test_output/
+
+  android:
+    needs: audio-verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.24.5"
+      - run: flutter --version
+      # 플랫폼 스캐폴드 생성(lib/·pubspec·assets 는 유지됨)
+      - run: flutter create --org com.mindsound --project-name mindsound --platforms=android .
+      # 네이티브 오디오 엔진 오버레이 + manifest 패치
+      - run: python3 tools/apply_native.py --platform android
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-warnings --no-fatal-infos || true
+      - run: flutter test
+      - run: flutter build apk --debug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: build/app/outputs/flutter-apk/*.apk
+
+  ios:
+    needs: audio-verify
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.24.5"
+      - run: flutter create --org com.mindsound --project-name mindsound --platforms=ios .
+      - run: python3 tools/apply_native.py --platform ios
+      - run: flutter pub get
+      - run: flutter test
+      # 서명 없이 iOS 빌드(실기기 배포 아님). 실패해도 전체 워크플로는 유지.
+      - run: flutter build ios --no-codesign
