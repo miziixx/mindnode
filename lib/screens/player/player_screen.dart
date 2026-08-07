@@ -279,10 +279,12 @@ class PlayerScreen extends StatelessWidget {
   Widget _mixer(BuildContext context, PlaybackController pb, Color accent) {
     final stage = pb.currentStage!;
     final rows = <Widget>[];
-    void add(String id, IconData icon, String name, String value, bool enabled) {
+    void add(String id, IconData icon, String name, String hint, String value,
+        bool enabled) {
       rows.add(_MixerRow(
         icon: icon,
         name: name,
+        hint: hint,
         value: value,
         enabled: enabled,
         accent: accent,
@@ -291,34 +293,34 @@ class PlayerScreen extends StatelessWidget {
       ));
     }
 
-    add('primary', AppIcons.wave, 'PRIMARY TONE',
+    add('primary', AppIcons.wave, 'PRIMARY TONE', '중심 주파수 · 세션의 기준음',
         '${stage.primaryTone.frequencyHz.toStringAsFixed(1)}Hz · ${stage.primaryTone.gainDb.toStringAsFixed(0)}dB',
         stage.primaryTone.enabled);
-    add('drone', AppIcons.drone, 'DRONE',
+    add('drone', AppIcons.drone, 'DRONE', '중심음을 감싸는 깊고 부드러운 배경음',
         '${stage.drone.subHz.toStringAsFixed(0)} / ${stage.drone.mainHz.toStringAsFixed(0)} / ${stage.drone.airHz.toStringAsFixed(0)}Hz',
         stage.drone.enabled);
     if (stage.secondaryTone.enabled || stage.secondaryTone.frequencyHz > 0) {
-      add('secondary', AppIcons.wave, 'SECONDARY',
+      add('secondary', AppIcons.wave, 'SECONDARY', '살짝 더해지는 보조 주파수',
           '${stage.secondaryTone.frequencyHz.toStringAsFixed(1)}Hz',
           stage.secondaryTone.enabled);
     }
     if (stage.binaural.enabled) {
-      add('binaural', AppIcons.binaural, 'BINAURAL',
+      add('binaural', AppIcons.binaural, 'BINAURAL', '좌우 다른 주파수 · 이어폰 권장',
           '${stage.binaural.beatHz.toStringAsFixed(1)}Hz beat',
           stage.binaural.enabled);
     }
     if (stage.pulse.enabled) {
-      add('pulse', AppIcons.pulse, 'PULSE',
+      add('pulse', AppIcons.pulse, 'PULSE', '음량이 부드럽게 커졌다 작아지는 맥동',
           '${stage.pulse.rateHz.toStringAsFixed(1)}Hz · ${(stage.pulse.depth * 100).round()}%',
           stage.pulse.enabled);
     }
-    add('nature', AppIcons.nature, 'NATURE',
+    add('nature', AppIcons.nature, 'NATURE', '빗소리·숲 등 자연 배경음',
         AssetCatalog.displayNameOf(stage.natureAssetId),
         stage.natureAssetId != null);
-    add('pad', AppIcons.pad, 'PAD',
+    add('pad', AppIcons.pad, 'PAD', '은은하게 깔리는 앰비언트 패드',
         AssetCatalog.displayNameOf(stage.padAssetId),
         stage.padAssetId != null);
-    add('chime', AppIcons.chime, 'CHIME',
+    add('chime', AppIcons.chime, 'CHIME', '종·싱잉볼 소리 (일정 간격)',
         AssetCatalog.displayNameOf(stage.chimeAssetId),
         stage.chimeAssetId != null);
 
@@ -349,6 +351,7 @@ class _MixerRow extends StatelessWidget {
   const _MixerRow({
     required this.icon,
     required this.name,
+    required this.hint,
     required this.value,
     required this.enabled,
     required this.accent,
@@ -357,6 +360,7 @@ class _MixerRow extends StatelessWidget {
   });
   final IconData icon;
   final String name;
+  final String hint;
   final String value;
   final bool enabled;
   final Color accent;
@@ -392,11 +396,18 @@ class _MixerRow extends StatelessWidget {
                   Text(name,
                       style: AppTypography.smallCaps.copyWith(
                           fontSize: 11, color: AppColors.textSecondary)),
+                  const SizedBox(height: 2),
+                  Text(hint,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.tiny
+                          .copyWith(fontSize: 10, color: AppColors.textMuted)),
                   const SizedBox(height: 3),
                   Text(value,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTypography.tiny.copyWith(fontSize: 11)),
+                      style: AppTypography.tiny.copyWith(
+                          fontSize: 11, color: AppColors.textSecondary)),
                 ],
               ),
             ),

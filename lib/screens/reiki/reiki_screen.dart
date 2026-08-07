@@ -1,16 +1,19 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/design/app_colors.dart';
+import '../../core/design/app_tokens.dart';
 import '../../core/design/app_typography.dart';
 import '../../core/models/preset.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/playback_controller.dart';
 import '../../widgets/app_icons.dart';
 import '../../widgets/common.dart';
+import '../../widgets/resonance_visualizer.dart';
 
 /// 레이키 세션 종류.
 enum ReikiKind { self, other, pet, space, chakra, custom }
@@ -238,73 +241,230 @@ class _ReikiPlayScreenState extends State<ReikiPlayScreen> {
   @override
   Widget build(BuildContext context) {
     final pb = context.watch<PlaybackController>();
-    final area = widget.positions[_positionIndex.clamp(0, widget.positions.length - 1)];
-    final posLeft = widget.intervalSec - _positionElapsed;
+    final app = context.watch<AppState>();
+    final count = widget.positions.length;
+    final idx = _positionIndex.clamp(0, count - 1);
+    final area = widget.positions[idx];
+    final posLeft = (widget.intervalSec - _positionElapsed)
+        .clamp(0, widget.intervalSec)
+        .toInt();
+    final posFraction =
+        widget.intervalSec > 0 ? _positionElapsed / widget.intervalSec : 0.0;
+    const accent = ChakraColors.heart; // 레이키: 차분한 세이지 그린 포인트
+    final width = MediaQuery.of(context).size.width.clamp(0.0, 520.0);
+    final ringSize = (width * 0.66).clamp(200.0, 320.0);
 
     // Material 로 감싸 DefaultTextStyle 을 제공(없으면 노란 밑줄 기본 스타일이 뜸).
     return Material(
       color: _dim ? Colors.black : AppColors.deep,
       child: GestureDetector(
-      onTap: _wake,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 600),
-        color: _dim ? Colors.black : AppColors.deep,
-        child: SafeArea(
-          child: AnimatedOpacity(
-            duration: const Duration(milliseconds: 600),
-            opacity: _dim ? 0.35 : 1.0,
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
-                Text(widget.title.toUpperCase(),
-                    style: AppTypography.smallCaps
-                        .copyWith(letterSpacing: 2.5, color: AppColors.textMuted)),
-                const Spacer(),
-                Text('현재 위치', style: AppTypography.tiny),
-                const SizedBox(height: 12),
-                Text(
-                    '${(_positionIndex + 1).toString().padLeft(2, '0')} / ${widget.positions.length.toString().padLeft(2, '0')}',
-                    style: AppTypography.frequencyDisplay.copyWith(fontSize: 40)),
-                const SizedBox(height: 6),
-                Text(area, style: AppTypography.h2),
-                const SizedBox(height: 28),
-                Text(pb.formatTime(posLeft < 0 ? 0 : posLeft),
-                    style: AppTypography.timeDisplay
-                        .copyWith(color: AppColors.textSecondary)),
-                Text('이 위치 남은 시간 · 전체 ${pb.formatTime(pb.totalRemainingSec)}',
-                    style: AppTypography.tiny),
-                const Spacer(),
-                if (!_dim)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 28),
-                    child: Row(
+        onTap: _wake,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 600),
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: const Alignment(0, -0.35),
+              radius: 1.0,
+              colors: [
+                accent.withOpacity(_dim ? 0.0 : 0.10),
+                AppColors.deep,
+              ],
+              stops: const [0.0, 0.6],
+            ),
+            color: _dim ? Colors.black : null,
+          ),
+          child: SafeArea(
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 600),
+              opacity: _dim ? 0.45 : 1.0,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 18),
+                    Text(widget.title.toUpperCase(),
+                        style: AppTypography.smallCaps.copyWith(
+                            letterSpacing: 2.5, color: accent)),
+                    const Spacer(),
+                    // 중앙 공명 링 + 현재 위치
+                    SizedBox(
+                      width: ringSize,
+                      height: ringSize,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          if (app.settings.showResonanceViz)
+                            ResonanceVisualizer(
+                              accent: accent,
+                              active: pb.isPlaying,
+                              reduceMotion: app.settings.reduceMotion,
+                              size: ringSize,
+                            ),
+                          CustomPaint(
+                            size: Size.square(ringSize),
+                            painter: _PositionRing(
+                                fraction: posFraction, accent: accent),
+                          ),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('현재 위치', style: AppTypography.tiny),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
+                                children: [
+                                  Text(
+                                      (idx + 1).toString().padLeft(2, '0'),
+                                      style: AppTypography.frequencyDisplay
+                                          .copyWith(fontSize: 56)),
+                                  Text(' / ${count.toString().padLeft(2, '0')}',
+                                      style: AppTypography.h3.copyWith(
+                                          color: AppColors.textMuted)),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(area,
+                                  style: AppTypography.h2
+                                      .copyWith(color: accent)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    // 위치 진행 점
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        SecondaryButton(
-                          label: pb.isPlaying ? '일시정지' : '재개',
-                          expand: false,
-                          onPressed: pb.togglePlayPause,
-                        ),
-                        const SizedBox(width: 12),
-                        SecondaryButton(
-                          label: '종료',
-                          expand: false,
-                          danger: true,
-                          onPressed: () async {
-                            await pb.stopGraceful();
-                            if (context.mounted) Navigator.pop(context);
-                          },
-                        ),
+                        for (var i = 0; i < count; i++)
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            margin:
+                                const EdgeInsets.symmetric(horizontal: 4),
+                            width: i == idx ? 22 : 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: i < idx
+                                  ? accent.withOpacity(0.5)
+                                  : (i == idx
+                                      ? accent
+                                      : AppColors.surface4),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
                       ],
                     ),
-                  ),
-              ],
+                    const SizedBox(height: 24),
+                    // 시간 칩 두 개
+                    Row(
+                      children: [
+                        _timeChip('이 위치', pb.formatTime(posLeft), accent),
+                        const SizedBox(width: 12),
+                        _timeChip('전체 남은 시간',
+                            pb.formatTime(pb.totalRemainingSec), null),
+                      ],
+                    ),
+                    const Spacer(),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 28),
+                      child: _dim
+                          ? Text('화면을 탭하면 밝아집니다',
+                              style: AppTypography.tiny)
+                          : Row(
+                              children: [
+                                Expanded(
+                                  child: SecondaryButton(
+                                    label: pb.isPlaying ? '일시정지' : '재개',
+                                    icon: pb.isPlaying
+                                        ? AppIcons.pause
+                                        : AppIcons.play,
+                                    onPressed: pb.togglePlayPause,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: SecondaryButton(
+                                    label: '종료',
+                                    danger: true,
+                                    onPressed: () async {
+                                      await pb.stopGraceful();
+                                      if (context.mounted) {
+                                        Navigator.pop(context);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _timeChip(String label, String value, Color? accent) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        decoration: BoxDecoration(
+          color: AppColors.surface1,
+          borderRadius: BorderRadius.circular(AppRadius.medium),
+          border: Border.all(color: AppColors.softDivider),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: AppTypography.tiny.copyWith(fontSize: 10)),
+            const SizedBox(height: 6),
+            Text(value,
+                style: AppTypography.timeDisplay.copyWith(
+                    fontSize: 24,
+                    color: accent ?? AppColors.textPrimary)),
+          ],
+        ),
       ),
     );
   }
+}
+
+/// 현재 위치 진행 링(위치 경과 비율을 호로 표시).
+class _PositionRing extends CustomPainter {
+  _PositionRing({required this.fraction, required this.accent});
+  final double fraction;
+  final Color accent;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width * 0.40;
+    final bg = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..color = AppColors.surface3;
+    canvas.drawCircle(center, radius, bg);
+    final arc = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round
+      ..color = accent.withOpacity(0.9);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      2 * math.pi * fraction.clamp(0.0, 1.0),
+      false,
+      arc,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _PositionRing old) =>
+      old.fraction != fraction || old.accent != accent;
 }

@@ -492,6 +492,13 @@ class PlaybackController extends ChangeNotifier {
     if (!completed) {
       state = PlaybackState.idle;
     }
+    // 카운터 초기화 — 다음에 다른 프리셋을 틀면 그 프리셋 시간에서 시작하도록.
+    currentStageIndex = 0;
+    _stageElapsedSec = 0;
+    totalRemainingSec = 0;
+    totalDurationSec = 0;
+    progressFraction = 0;
+    sessionModified = false;
     _session = null;
     _sourcePreset = null;
     notifyListeners();
