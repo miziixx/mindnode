@@ -201,6 +201,37 @@ class MindSoundAudioEngine(
         }
     }
 
+    /// 재생 중 자연음 교체(백그라운드 로드 후 스왑 + 게인 램프).
+    fun setNatureAsset(assetId: String?, assetKey: String?) {
+        if (assetKey == null) {
+            naturePlayer.stop()
+            natureGain.setTarget(0.0, sampleRate.toDouble(), 100.0)
+            return
+        }
+        loader.post {
+            val clip = WavDecoder.loadFlutterAsset(context, assetKey, sampleRate)
+            if (clip != null) {
+                naturePlayer = ClipPlayer(clip, loop = true).also { it.trigger() }
+                natureGain.setTarget(DspConst.dbToLin(-20.0), sampleRate.toDouble(), 200.0)
+            }
+        }
+    }
+
+    fun setPadAsset(assetId: String?, assetKey: String?) {
+        if (assetKey == null) {
+            padPlayer.stop()
+            padGain.setTarget(0.0, sampleRate.toDouble(), 100.0)
+            return
+        }
+        loader.post {
+            val clip = WavDecoder.loadFlutterAsset(context, assetKey, sampleRate)
+            if (clip != null) {
+                padPlayer = ClipPlayer(clip, loop = true).also { it.trigger() }
+                padGain.setTarget(DspConst.dbToLin(-24.0), sampleRate.toDouble(), 200.0)
+            }
+        }
+    }
+
     fun dispose() {
         running = false
         try { renderThread?.join(500) } catch (_: Exception) {}
@@ -310,6 +341,10 @@ class MindSoundAudioEngine(
                 continue
             }
             val s = snapshot.get()
+            // 팬 게인은 블록당 1회만 계산(샘플마다 Pair 할당 금지 → 끊김 방지).
+            val panA = (s.primary.pan + 1.0) / 2.0 * Math.PI / 2.0
+            val panL = Math.cos(panA)
+            val panR = Math.sin(panA)
             var i = 0
             while (i < blockFrames) {
                 var l = 0.0; var r = 0.0
@@ -320,8 +355,7 @@ class MindSoundAudioEngine(
                     val f = primaryFreq.next()
                     if (g > 1e-6) {
                         val v = primaryOsc.next(f, sr) * g
-                        val (lg, rg) = panGains(s.primary.pan)
-                        l += v * lg; r += v * rg; active++
+                        l += v * panL; r += v * panR; active++
                     } else primaryOsc.next(f, sr)
                 }
                 // secondary
@@ -368,7 +402,8 @@ class MindSoundAudioEngine(
             t.write(buffer, 0, buffer.size, AudioTrack.WRITE_BLOCKING)
             framesRendered += blockFrames
 
-            handleTimingAndChimes(s)
+            // 시간·단계·차임은 Dart 틱커가 단일 권위로 관리한다(네이티브는 audio 만).
+            // 여기서는 graceful 페이드아웃 완료만 감지해 종료한다.
             if (stopRequested && masterGain.current <= 1e-5) { running = false }
         }
         try { t.stop() } catch (_: Exception) {}
@@ -377,47 +412,6 @@ class MindSoundAudioEngine(
             emit(mapOf("type" to "playbackStateChanged", "state" to "idle"))
             if (completed) emit(mapOf("type" to "sessionCompleted"))
         }
-    }
-
-    private fun handleTimingAndChimes(s: Stage) {
-        val sr = sampleRate.toLong()
-        // 이벤트 ~ 250ms 주기
-        if (framesRendered - lastEventFrame >= sr / 4) {
-            lastEventFrame = framesRendered
-            val elapsedTotal = elapsedTotalSec()
-            val remaining = (totalDurationSec - elapsedTotal).coerceAtLeast(0)
-            emit(mapOf("type" to "remainingTimeChanged", "remainingSec" to remaining,
-                "totalSec" to totalDurationSec))
-            val frac = if (totalDurationSec > 0) elapsedTotal.toDouble() / totalDurationSec else 0.0
-            emit(mapOf("type" to "progressChanged", "fraction" to frac.coerceIn(0.0, 1.0)))
-        }
-        // 스테이지 전환
-        val stageElapsed = (framesRendered - stageStartFrame) / sr
-        if (s.durationSec > 0 && stageElapsed >= s.durationSec) {
-            if (stageIndex < stages.size - 1) changeStage(stageIndex + 1)
-            else if (!stopRequested) stop(graceful = true)
-        }
-        // 차임 인터벌
-        if (s.chimeIntervalSec > 0 && !paused) {
-            val since = (framesRendered - lastChimeFrame) / sr
-            if (since >= s.chimeIntervalSec) {
-                lastChimeFrame = framesRendered
-                if (!chimePlayer.active) chimePlayer.trigger()
-                main.post { emit(mapOf("type" to "chimeTriggered", "assetId" to s.chimeAssetId)) }
-            }
-        }
-    }
-
-    private fun elapsedTotalSec(): Int {
-        var acc = 0
-        for (i in 0 until stageIndex) acc += stages[i].durationSec
-        acc += ((framesRendered - stageStartFrame) / sampleRate).toInt()
-        return acc
-    }
-
-    private fun panGains(pan: Double): Pair<Double, Double> {
-        val a = (pan + 1) / 2 * Math.PI / 2
-        return Pair(Math.cos(a), Math.sin(a))
     }
 
     private fun displayFreq(s: Stage): Double? = when {

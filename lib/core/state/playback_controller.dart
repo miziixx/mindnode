@@ -366,17 +366,15 @@ class PlaybackController extends ChangeNotifier {
           _ticker?.cancel();
         }
         notifyListeners();
-      case CurrentStageChanged(:final stageIndex):
-        currentStageIndex = stageIndex;
-        _stageElapsedSec = 0;
-        notifyListeners();
-      case ProgressChanged(:final fraction):
-        progressFraction = fraction;
-        notifyListeners();
-      case RemainingTimeChanged(:final remainingSec, :final totalSec):
-        totalRemainingSec = remainingSec;
-        if (totalSec > 0) totalDurationSec = totalSec;
-        notifyListeners();
+      // 시간/단계는 Dart 틱커가 단일 권위로 관리한다(네이티브 이벤트와의 이중
+      // 카운팅/이중 단계전환으로 인한 지멋대로 카운터를 방지). 네이티브의 아래
+      // 이벤트들은 무시한다.
+      case CurrentStageChanged():
+        break;
+      case ProgressChanged():
+        break;
+      case RemainingTimeChanged():
+        break;
       case RouteChanged(:final headphonesConnected):
         this.headphonesConnected = headphonesConnected;
         // 이어폰 분리 시 기본 일시정지(설정 존중).
@@ -392,7 +390,10 @@ class PlaybackController extends ChangeNotifier {
         }
         notifyListeners();
       case SessionCompleted():
-        _onCompleted();
+        // 네이티브 페이드아웃 완료 통지. Dart 틱커가 이미 완료 처리했으면 무시.
+        if (state != PlaybackState.completed && _session != null) {
+          _onCompleted();
+        }
       case ErrorOccurred(:final code, :final message):
         lastError = '[$code] $message';
         // 비정상 출력 감지 시 안전하게 상태 표기(음소거는 네이티브가 처리).
@@ -413,7 +414,7 @@ class PlaybackController extends ChangeNotifier {
     await _finishSession(completed: true);
   }
 
-  // --- 진행 틱커(보조) ---
+  // --- 진행 틱커(시간·단계·차임의 단일 권위) ---
 
   void _startTicker() {
     _ticker?.cancel();
@@ -427,16 +428,37 @@ class PlaybackController extends ChangeNotifier {
         progressFraction =
             1.0 - (totalRemainingSec / totalDurationSec).clamp(0.0, 1.0);
       }
+      // 인터벌 차임(스테이지 시작 기준). 종료 시점에는 울리지 않는다.
+      if (st.chimeIntervalSec > 0 &&
+          _stageElapsedSec > 0 &&
+          _stageElapsedSec % st.chimeIntervalSec == 0 &&
+          _stageElapsedSec < st.durationSec) {
+        triggerChimeNow(st.chimeAssetId);
+      }
       if (_stageElapsedSec >= st.durationSec) {
         if (currentStageIndex < stageCount - 1) {
-          _applyStageIndex(currentStageIndex + 1);
+          // 네이티브에 단계 전환을 지시(크로스페이드는 네이티브가 처리).
+          currentStageIndex++;
+          _stageElapsedSec = 0;
+          engine.nextStage();
         } else {
-          _onCompleted();
+          _completeByTimer();
           return;
         }
       }
       notifyListeners();
     });
+  }
+
+  /// 타이머 종료 → 부드러운 페이드아웃 후 완료 처리.
+  Future<void> _completeByTimer() async {
+    _ticker?.cancel();
+    state = PlaybackState.completed;
+    totalRemainingSec = 0;
+    progressFraction = 1.0;
+    notifyListeners();
+    await engine.stop(graceful: true); // 종료 페이드
+    await _finishSession(completed: true);
   }
 
   Future<void> _finishSession({required bool completed}) async {

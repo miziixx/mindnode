@@ -76,8 +76,8 @@ class MainActivity : FlutterActivity() {
             "setSecondaryFrequency" -> engine.setSecondaryFrequency((a["hz"] as? Number)?.toDouble() ?: 440.0)
             "setLayerEnabled" -> engine.setLayerEnabled(a["layerId"] as String, a["enabled"] as Boolean)
             "setLayerGain" -> engine.setLayerGain(a["layerId"] as String, (a["gainDb"] as? Number)?.toDouble() ?: -24.0)
-            "setNatureAsset" -> {} // 스테이지 스냅샷 기반; 재로드는 loadPreset/stage 전환에서 처리
-            "setPadAsset" -> {}
+            "setNatureAsset" -> engine.setNatureAsset(a["assetId"] as? String, a["assetPath"] as? String)
+            "setPadAsset" -> engine.setPadAsset(a["assetId"] as? String, a["assetPath"] as? String)
             "triggerChime" -> engine.triggerChime(a["assetPath"] as? String)
             "setDroneParameters", "setBinauralParameters", "setPulseParameters", "setTimer" -> {}
             "dispose" -> { engine.dispose(); MindSoundAudio.engine = null; stopService() }

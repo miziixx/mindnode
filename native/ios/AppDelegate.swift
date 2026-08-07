@@ -344,26 +344,13 @@ final class MindSoundEngine {
         }
     }
     private func tick() {
-        if stopRequested && masterGain.current <= 1e-5 { finish(completed: false); return }
-        let elapsed = elapsedTotalSec()
-        let remaining = max(0, totalDurationSec - elapsed)
-        onEvent(["type": "remainingTimeChanged", "remainingSec": remaining, "totalSec": totalDurationSec])
-        let frac = totalDurationSec > 0 ? Double(elapsed) / Double(totalDurationSec) : 0
-        onEvent(["type": "progressChanged", "fraction": min(1, max(0, frac))])
-        if let s = stages[safe: stageIndex] {
-            let stageElapsed = Int((framesRendered - stageStartFrame) / Int64(sampleRate))
-            if s.durationSec > 0 && stageElapsed >= s.durationSec {
-                if stageIndex < stages.count - 1 { changeStage(stageIndex + 1) }
-                else if !stopRequested { stop(graceful: true) }
-            }
-        }
+        // 시간·단계·차임은 Dart 틱커가 단일 권위. 네이티브는 graceful 페이드아웃
+        // 완료만 감지해 종료한다.
+        if stopRequested && masterGain.current <= 1e-5 { finish(completed: false) }
     }
-    private func elapsedTotalSec() -> Int {
-        var acc = 0
-        for i in 0..<stageIndex where i < stages.count { acc += stages[i].durationSec }
-        acc += Int((framesRendered - stageStartFrame) / Int64(sampleRate))
-        return acc
-    }
+
+    func setNatureAsset(_ key: String?) { scheduleLoop(naturePlayer, key: key) }
+    func setPadAsset(_ key: String?) { scheduleLoop(padPlayer, key: key) }
     private func finish(completed: Bool) {
         timer?.invalidate()
         naturePlayer.stop(); padPlayer.stop(); chimePlayer.stop()
@@ -492,6 +479,8 @@ extension Array {
         case "setSecondaryFrequency": mindEngine.setSecondaryFrequency((a["hz"] as? NSNumber)?.doubleValue ?? 440)
         case "setLayerEnabled": mindEngine.setLayerEnabled(a["layerId"] as? String ?? "", a["enabled"] as? Bool ?? true)
         case "setLayerGain": mindEngine.setLayerGain(a["layerId"] as? String ?? "", (a["gainDb"] as? NSNumber)?.doubleValue ?? -24)
+        case "setNatureAsset": mindEngine.setNatureAsset(a["assetPath"] as? String)
+        case "setPadAsset": mindEngine.setPadAsset(a["assetPath"] as? String)
         case "triggerChime": mindEngine.triggerChime(a["assetPath"] as? String)
         case "dispose": mindEngine.dispose()
         default: break

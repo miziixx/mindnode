@@ -140,7 +140,8 @@ class _ReikiSetupScreenState extends State<ReikiSetupScreen> {
         app.presets.all.firstWhere((p) => p.category == PresetCategory.reiki);
     final draft = preset.deepCopy();
     draft.stages.first.durationSec = _lengthMin * 60;
-    draft.stages.first.chimeIntervalSec = _intervalMin * 60;
+    // 차임은 레이키 화면의 위치 변경 타이머가 담당 → 세션 인터벌 차임은 끔(중복 방지).
+    draft.stages.first.chimeIntervalSec = 0;
     await pb.prepareSession(draft);
     await pb.start();
     if (!mounted) return;
@@ -240,7 +241,10 @@ class _ReikiPlayScreenState extends State<ReikiPlayScreen> {
     final area = widget.positions[_positionIndex.clamp(0, widget.positions.length - 1)];
     final posLeft = widget.intervalSec - _positionElapsed;
 
-    return GestureDetector(
+    // Material 로 감싸 DefaultTextStyle 을 제공(없으면 노란 밑줄 기본 스타일이 뜸).
+    return Material(
+      color: _dim ? Colors.black : AppColors.deep,
+      child: GestureDetector(
       onTap: _wake,
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
@@ -299,6 +303,7 @@ class _ReikiPlayScreenState extends State<ReikiPlayScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }
