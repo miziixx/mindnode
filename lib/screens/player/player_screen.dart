@@ -13,7 +13,7 @@ import '../../widgets/common.dart';
 import '../../widgets/dialogs.dart';
 import '../../widgets/dreamy_background.dart';
 import '../../widgets/layer_sheet.dart';
-import '../../widgets/resonance_visualizer.dart';
+import '../../widgets/player_visualizer.dart';
 
 /// 프리셋을 세션으로 준비하고 플레이어를 연다(바로 재생하지 않음).
 Future<void> openPresetInPlayer(BuildContext context, Preset preset) async {
@@ -151,6 +151,7 @@ class PlayerScreen extends StatelessWidget {
     final stage = pb.currentStage!;
     final width = MediaQuery.of(context).size.width.clamp(0.0, 520.0);
     final size = width * 0.62;
+    final showViz = app.settings.showResonanceViz;
     return Column(
       children: [
         SizedBox(
@@ -158,8 +159,8 @@ class PlayerScreen extends StatelessWidget {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              if (app.settings.showResonanceViz)
-                ResonanceVisualizer(
+              if (showViz)
+                PlayerVisualizer(
                   accent: accent,
                   active: pb.isPlaying,
                   reduceMotion: app.settings.reduceMotion,
@@ -167,29 +168,40 @@ class PlayerScreen extends StatelessWidget {
                   pulseRateHz: stage.pulse.rateHz,
                   binauralActive: stage.binaural.enabled,
                   size: size,
+                  seed: session.id.hashCode.abs(),
+                  onStyleChanged: (s) => showToast(
+                      context, kVizStyleNames[s.index]),
                 ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    freq == null
-                        ? '무음'
-                        : freq.toStringAsFixed(
-                            app.settings.showFrequencyDecimals ? 1 : 0),
-                    style: AppTypography.frequencyDisplay,
-                  ),
-                  if (freq != null)
-                    Text('HZ',
-                        style: AppTypography.smallCaps
-                            .copyWith(letterSpacing: 2)),
-                  const SizedBox(height: 10),
-                  Text(stage.title.isEmpty ? session.title : stage.title,
-                      style: AppTypography.h3.copyWith(fontSize: 14)),
-                ],
+              // 텍스트는 탭을 통과시켜(IgnorePointer) 시각화 스타일 순환을 방해하지 않음.
+              IgnorePointer(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      freq == null
+                          ? '무음'
+                          : freq.toStringAsFixed(
+                              app.settings.showFrequencyDecimals ? 1 : 0),
+                      style: AppTypography.frequencyDisplay,
+                    ),
+                    if (freq != null)
+                      Text('HZ',
+                          style: AppTypography.smallCaps
+                              .copyWith(letterSpacing: 2)),
+                    const SizedBox(height: 10),
+                    Text(stage.title.isEmpty ? session.title : stage.title,
+                        style: AppTypography.h3.copyWith(fontSize: 14)),
+                  ],
+                ),
               ),
             ],
           ),
         ),
+        if (showViz && pb.isPlaying && !app.settings.reduceMotion) ...[
+          const SizedBox(height: 6),
+          Text('화면을 탭해 애니메이션 바꾸기',
+              style: AppTypography.tiny.copyWith(fontSize: 10)),
+        ],
       ],
     );
   }

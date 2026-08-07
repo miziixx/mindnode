@@ -27,59 +27,47 @@ SS = 4  # 슈퍼샘플
 
 
 def render_master(size=1024):
+    """사운드 만다라 — 중심에서 방사되는 소리 막대(라디얼 이퀄라이저)."""
     S = size * SS
     cx = cy = S / 2
 
-    # 배경: 세로 그라데이션 + 중앙 위쪽 은은한 방사형 글로우
-    yy = np.linspace(0, 1, S)[:, None]
-    top = np.array(BG_TOP); bot = np.array(BG_BOT)
-    grad = (top * (1 - yy) + bot * yy)  # (S,3) 세로 그라데이션
-    bg = np.broadcast_to(grad[:, None, :], (S, S, 3)).astype(np.float64).copy()
-
-    gx = np.arange(S)[None, :] - cx
-    gy = np.arange(S)[:, None] - (S * 0.42)
-    d = np.sqrt(gx ** 2 + gy ** 2)
-    glow = np.exp(-(d / (S * 0.34)) ** 2) * 0.22
+    # 배경: 대각 그라데이션(딥 인디고 → 차콜) + 중앙 은은한 글로우
+    yy, xx = np.mgrid[0:S, 0:S].astype(np.float64) / S
+    t = (xx * math.cos(math.pi / 4) + yy * math.sin(math.pi / 4))
+    t = (t - t.min()) / (t.max() - t.min())
+    c0 = np.array((26, 24, 46)); c1 = np.array((11, 13, 18))
+    bg = (c0[None, None] * (1 - t)[:, :, None] + c1[None, None] * t[:, :, None])
+    d = np.sqrt((np.arange(S)[None, :] - cx) ** 2 + (np.arange(S)[:, None] - cy) ** 2)
+    glow = np.exp(-(d / (S * 0.30)) ** 2) * 0.20
     for i in range(3):
         bg[:, :, i] = bg[:, :, i] * (1 - glow) + ACCENT[i] * glow
-
     base = Image.fromarray(np.clip(bg, 0, 255).astype(np.uint8), "RGB").convert("RGBA")
 
-    # 링 + 코어를 그릴 레이어(글로우용)
+    # 방사형 막대
     layer = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     dr = ImageDraw.Draw(layer)
-    rings = [(0.17, ACCENT, 235), (0.29, ACCENT, 150), (0.41, VIOLET, 95)]
-    lw = int(S * 0.013)
-    for rr, col, alpha in rings:
-        r = S * rr
-        dr.ellipse([cx - r, cy - r, cx + r, cy + r],
-                   outline=col + (alpha,), width=lw)
-    # 중심 코어(부드러운 원)
-    core_r = S * 0.055
-    dr.ellipse([cx - core_r, cy - core_r, cx + core_r, cy + core_r],
-               fill=ACCENT + (255,))
+    n = 56
+    inner = S * 0.17
+    lw = int(S * 0.019)
+    for i in range(n):
+        ang = i / n * 2 * math.pi
+        h = 0.5 + 0.5 * math.sin(i / n * 2 * math.pi * 3)  # 부드러운 물결
+        outer = inner + S * (0.05 + 0.17 * h)
+        f = i / n
+        col = (int(ACCENT[0] * (1 - f) + VIOLET[0] * f),
+               int(ACCENT[1] * (1 - f) + VIOLET[1] * f),
+               int(ACCENT[2] * (1 - f) + VIOLET[2] * f))
+        x0 = cx + inner * math.cos(ang); y0 = cy + inner * math.sin(ang)
+        x1 = cx + outer * math.cos(ang); y1 = cy + outer * math.sin(ang)
+        dr.line([(x0, y0), (x1, y1)], fill=col + (255,), width=lw)
+    # 중심 코어
+    core = S * 0.045
+    dr.ellipse([cx - core, cy - core, cx + core, cy + core], fill=WHITE + (255,))
 
-    # 글로우: 레이어를 블러해서 먼저 합성
     glow_layer = layer.filter(ImageFilter.GaussianBlur(radius=S * 0.02))
     base.alpha_composite(glow_layer)
-    base.alpha_composite(glow_layer)  # 한 번 더 → 은은하게 빛남
-    base.alpha_composite(layer)       # 선명한 링
-
-    # 별빛 점
-    stars = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-    ds = ImageDraw.Draw(stars)
-    rng = np.random.default_rng(5)
-    for _ in range(14):
-        ang = rng.uniform(0, 2 * math.pi)
-        rad = rng.uniform(0.12, 0.46) * S
-        x = cx + rad * math.cos(ang)
-        y = cy + rad * math.sin(ang)
-        sr = rng.uniform(1.5, 4.0) * SS
-        a = int(rng.uniform(90, 200))
-        ds.ellipse([x - sr, y - sr, x + sr, y + sr], fill=WHITE + (a,))
-    stars = stars.filter(ImageFilter.GaussianBlur(radius=SS * 0.6))
-    base.alpha_composite(stars)
-
+    base.alpha_composite(glow_layer)
+    base.alpha_composite(layer)
     return base.resize((size, size), Image.LANCZOS).convert("RGB")
 
 
