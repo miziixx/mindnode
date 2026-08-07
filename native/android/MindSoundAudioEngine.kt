@@ -323,12 +323,14 @@ class MindSoundAudioEngine(
                     .build()
             )
             .setTransferMode(AudioTrack.MODE_STREAM)
-            .setBufferSizeInBytes(minBuf * 2)
+            // 언더런(끊김) 방지를 위해 넉넉한 버퍼.
+            .setBufferSizeInBytes(minBuf * 4)
             .build()
     }
 
     private val blockFrames = 256
     private val buffer = FloatArray(blockFrames * 2)
+    private val silence = FloatArray(blockFrames * 2)
 
     private fun renderLoop() {
         val t = track ?: return
@@ -336,8 +338,8 @@ class MindSoundAudioEngine(
         val sr = sampleRate.toDouble()
         while (running) {
             if (paused) {
-                // 무음 유지(급작스런 소리 방지). 짧게 대기.
-                java.util.concurrent.locks.LockSupport.parkNanos(5_000_000)
+                // 일시정지 중에도 무음을 계속 공급해 AudioTrack 언더런/글리치 방지.
+                t.write(silence, 0, silence.size, AudioTrack.WRITE_BLOCKING)
                 continue
             }
             val s = snapshot.get()
