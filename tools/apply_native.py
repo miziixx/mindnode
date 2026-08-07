@@ -55,6 +55,17 @@ def apply_android():
         f.write(xml)
     print("patched AndroidManifest.xml (permissions + PlaybackService)")
 
+    # 앱 아이콘(생성된 mipmap 덮어쓰기)
+    icon_src = os.path.join(ROOT, "assets", "launcher_icons", "android")
+    res = os.path.join(ROOT, "android", "app", "src", "main", "res")
+    if os.path.isdir(icon_src):
+        for dpi in ("mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"):
+            src = os.path.join(icon_src, f"mipmap-{dpi}", "ic_launcher.png")
+            dstdir = os.path.join(res, f"mipmap-{dpi}")
+            if os.path.exists(src) and os.path.isdir(dstdir):
+                shutil.copy(src, os.path.join(dstdir, "ic_launcher.png"))
+        print("overwrote Android launcher icons (mipmap-*)")
+
 
 def apply_ios():
     src = os.path.join(ROOT, "native", "ios", "AppDelegate.swift")
@@ -88,6 +99,14 @@ def apply_ios():
         with open(pbxproj, "w", encoding="utf-8") as f:
             f.write(pb)
         print("patched project.pbxproj (IPHONEOS_DEPLOYMENT_TARGET = 13.0)")
+
+    # 앱 아이콘(AppIcon.appiconset 전체 교체)
+    icon_src = os.path.join(ROOT, "assets", "launcher_icons", "ios", "AppIcon.appiconset")
+    icon_dst = os.path.join(ROOT, "ios", "Runner", "Assets.xcassets", "AppIcon.appiconset")
+    if os.path.isdir(icon_src) and os.path.isdir(os.path.dirname(icon_dst)):
+        shutil.rmtree(icon_dst, ignore_errors=True)
+        shutil.copytree(icon_src, icon_dst)
+        print("replaced iOS AppIcon.appiconset")
 
     podfile = os.path.join(ROOT, "ios", "Podfile")
     if os.path.exists(podfile):
