@@ -52,6 +52,7 @@ class PresetRepository {
     for (final asset in const [
       'assets/presets/default_presets.json',
       'assets/presets/chakra_presets.json',
+      'assets/presets/wellness_presets.json',
     ]) {
       final text = await rootBundle.loadString(asset);
       final raw = jsonDecode(text) as Map<String, dynamic>;

@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "presets": [
+    {
+      "schemaVersion": 1, "id": "sleep_delta", "title": "잠이 안 올 때 · 수면 유도", "category": "meditation",
+      "symbolicUse": true, "fadeInSec": 8, "fadeOutSec": 30, "masterGainDb": -12, "isBuiltIn": true,
+      "stages": [{
+        "id": "main", "title": "델타 3Hz · 수면", "durationSec": 1800,
+        "primaryTone": { "enabled": false, "frequencyHz": 100.0, "gainDb": -30, "pan": 0 },
+        "drone": { "enabled": true, "centerHz": 108.0, "gainDb": -26, "movementRateHz": 0.03, "stereoWidth": 0.3 },
+        "secondaryTone": { "enabled": false, "frequencyHz": 200.0, "gainDb": -36, "pan": 0 },
+        "binaural": { "enabled": true, "carrierHz": 100.0, "beatHz": 3.0, "invert": false, "gainDb": -30 },
+        "pulse": { "enabled": false, "frequencyHz": 108.0, "rateHz": 3.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+        "natureAssetId": "rain_soft", "padAssetId": "deep_space", "chimeAssetId": null,
+        "chimeIntervalSec": 0, "transitionDurationSec": 1.5
+      }]
+    },
+    {
+      "schemaVersion": 1, "id": "deep_sleep", "title": "깊은 수면", "category": "meditation",
+      "symbolicUse": true, "fadeInSec": 8, "fadeOutSec": 30, "masterGainDb": -12, "isBuiltIn": true,
+      "stages": [{
+        "id": "main", "title": "델타 2Hz · 깊은 수면", "durationSec": 2700,
+        "primaryTone": { "enabled": false, "frequencyHz": 90.0, "gainDb": -30, "pan": 0 },
+        "drone": { "enabled": true, "centerHz": 90.0, "gainDb": -26, "movementRateHz": 0.03, "stereoWidth": 0.3 },
+        "secondaryTone": { "enabled": false, "frequencyHz": 180.0, "gainDb": -36, "pan": 0 },
+        "binaural": { "enabled": true, "carrierHz": 90.0, "beatHz": 2.0, "invert": false, "gainDb": -30 },
+        "pulse": { "enabled": false, "frequencyHz": 90.0, "rateHz": 2.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+        "natureAssetId": "ocean_calm", "padAssetId": "grounding_dark", "chimeAssetId": null,
+        "chimeIntervalSec": 0, "transitionDurationSec": 1.5
+      }]
+    },
+    {
+      "schemaVersion": 1, "id": "focus_beta", "title": "집중 · 공부와 업무", "category": "energize",
+      "symbolicUse": true, "fadeInSec": 4, "fadeOutSec": 12, "masterGainDb": -12, "isBuiltIn": true,
+      "stages": [{
+        "id": "main", "title": "베타 14Hz · 집중", "durationSec": 1500,
+        "primaryTone": { "enabled": false, "frequencyHz": 528.0, "gainDb": -32, "pan": 0 },
+        "drone": { "enabled": true, "centerHz": 220.0, "gainDb": -27, "movementRateHz": 0.05, "stereoWidth": 0.2 },
+        "secondaryTone": { "enabled": false, "frequencyHz": 440.0, "gainDb": -38, "pan": 0 },
+        "binaural": { "enabled": true, "carrierHz": 220.0, "beatHz": 14.0, "invert": false, "gainDb": -28 },
+        "pulse": { "enabled": false, "frequencyHz": 220.0, "rateHz": 14.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+        "natureAssetId": null, "padAssetId": "soft_light", "chimeAssetId": null,
+        "chimeIntervalSec": 0, "transitionDurationSec": 1.5
+      }]
+    },
+    {
+      "schemaVersion": 1, "id": "flow_gamma", "title": "몰입 · 딥워크", "category": "energize",
+      "symbolicUse": true, "fadeInSec": 4, "fadeOutSec": 12, "masterGainDb": -12, "isBuiltIn": true,
+      "stages": [{
+        "id": "main", "title": "감마 40Hz · 몰입", "durationSec": 1800,
+        "primaryTone": { "enabled": false, "frequencyHz": 440.0, "gainDb": -32, "pan": 0 },
+        "drone": { "enabled": true, "centerHz": 220.0, "gainDb": -27, "movementRateHz": 0.06, "stereoWidth": 0.22 },
+        "secondaryTone": { "enabled": false, "frequencyHz": 880.0, "gainDb": -38, "pan": 0 },
+        "binaural": { "enabled": true, "carrierHz": 220.0, "beatHz": 40.0, "invert": false, "gainDb": -30 },
+        "pulse": { "enabled": false, "frequencyHz": 220.0, "rateHz": 40.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+        "natureAssetId": null, "padAssetId": "crystal_air", "chimeAssetId": null,
+        "chimeIntervalSec": 0, "transitionDurationSec": 1.5
+      }]
+    },
+    {
+      "schemaVersion": 1, "id": "calm_alpha", "title": "불안·긴장 완화", "category": "meditation",
+      "symbolicUse": true, "fadeInSec": 5, "fadeOutSec": 18, "masterGainDb": -12, "isBuiltIn": true,
+      "stages": [{
+        "id": "main", "title": "알파 10Hz · 진정", "durationSec": 1200,
+        "primaryTone": { "enabled": true, "frequencyHz": 432.0, "gainDb": -28, "pan": 0 },
+        "drone": { "enabled": true, "centerHz": 216.0, "gainDb": -26, "movementRateHz": 0.04, "stereoWidth": 0.28 },
+        "secondaryTone": { "enabled": false, "frequencyHz": 864.0, "gainDb": -38, "pan": 0 },
+        "binaural": { "enabled": true, "carrierHz": 216.0, "beatHz": 10.0, "invert": false, "gainDb": -30 },
+        "pulse": { "enabled": false, "frequencyHz": 432.0, "rateHz": 10.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+        "natureAssetId": "stream_soft", "padAssetId": "warm_air", "chimeAssetId": null,
+        "chimeIntervalSec": 0, "transitionDurationSec": 1.5
+      }]
+    },
+    {
+      "schemaVersion": 1, "id": "theta_relax", "title": "세타 · 깊은 이완", "category": "meditation",
+      "symbolicUse": true, "fadeInSec": 6, "fadeOutSec": 20, "masterGainDb": -12, "isBuiltIn": true,
+      "stages": [{
+        "id": "main", "title": "세타 6Hz · 이완", "durationSec": 1200,
+        "primaryTone": { "enabled": false, "frequencyHz": 432.0, "gainDb": -30, "pan": 0 },
+        "drone": { "enabled": true, "centerHz": 216.0, "gainDb": -25, "movementRateHz": 0.04, "stereoWidth": 0.3 },
+        "secondaryTone": { "enabled": false, "frequencyHz": 864.0, "gainDb": -38, "pan": 0 },
+        "binaural": { "enabled": true, "carrierHz": 216.0, "beatHz": 6.0, "invert": false, "gainDb": -30 },
+        "pulse": { "enabled": false, "frequencyHz": 432.0, "rateHz": 6.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+        "natureAssetId": "wind_light", "padAssetId": "deep_space", "chimeAssetId": null,
+        "chimeIntervalSec": 0, "transitionDurationSec": 1.5
+      }]
+    },
+    {
+      "schemaVersion": 1, "id": "stress_relief", "title": "스트레스 해소 · 7.83Hz", "category": "meditation",
+      "symbolicUse": true, "fadeInSec": 5, "fadeOutSec": 18, "masterGainDb": -12, "isBuiltIn": true,
+      "stages": [{
+        "id": "main", "title": "슈만 7.83Hz · 안정", "durationSec": 1200,
+        "primaryTone": { "enabled": false, "frequencyHz": 432.0, "gainDb": -30, "pan": 0 },
+        "drone": { "enabled": true, "centerHz": 432.0, "gainDb": -25, "movementRateHz": 0.05, "stereoWidth": 0.25 },
+        "secondaryTone": { "enabled": false, "frequencyHz": 864.0, "gainDb": -38, "pan": 0 },
+        "binaural": { "enabled": false, "carrierHz": 216.0, "beatHz": 7.83, "invert": false, "gainDb": -30 },
+        "pulse": { "enabled": true, "frequencyHz": 432.0, "rateHz": 7.83, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+        "natureAssetId": "rain_soft", "padAssetId": "warm_air", "chimeAssetId": null,
+        "chimeIntervalSec": 0, "transitionDurationSec": 1.5
+      }]
+    }
+  ]
+}

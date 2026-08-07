@@ -11,6 +11,7 @@ import '../../core/state/playback_controller.dart';
 import '../../widgets/app_icons.dart';
 import '../../widgets/common.dart';
 import '../../widgets/dialogs.dart';
+import '../../widgets/dreamy_background.dart';
 import '../../widgets/layer_sheet.dart';
 import '../../widgets/resonance_visualizer.dart';
 
@@ -68,7 +69,17 @@ class PlayerScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Center(
+      body: Stack(
+        children: [
+          // 몽환적 배경(바람에 흐르는 별빛 · 연기 같은 성운).
+          if (app.settings.showResonanceViz)
+            Positioned.fill(
+              child: DreamyBackground(
+                accent: accent,
+                reduceMotion: app.settings.reduceMotion,
+              ),
+            ),
+          Center(
         child: ConstrainedBox(
           constraints:
               const BoxConstraints(maxWidth: AppMetrics.contentMaxWidth),
@@ -103,6 +114,8 @@ class PlayerScreen extends StatelessWidget {
             ),
           ),
         ),
+      ),
+        ],
       ),
     );
   }

@@ -27,6 +27,17 @@ class HomeScreen extends StatelessWidget {
     ('reiki_self', ChakraColors.crown),
   ];
 
+  // 목적별 추천(뇌파 기반, 이어폰 권장): (presetId, 포인트색)
+  static const _recommended = [
+    ('sleep_delta', ChakraColors.thirdEye),
+    ('deep_sleep', ChakraColors.crown),
+    ('calm_alpha', ChakraColors.heart),
+    ('stress_relief', ChakraColors.sacral),
+    ('theta_relax', ChakraColors.throat),
+    ('focus_beta', AppColors.info),
+    ('flow_gamma', ChakraColors.solar),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
@@ -53,6 +64,22 @@ class HomeScreen extends StatelessWidget {
                 onOpenOverride:
                     q.$1 == 'reiki_self' ? () => openReiki(context) : null,
               ),
+            );
+          }),
+        const SizedBox(height: 24),
+        SectionHeader('목적별 추천'),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Text('수면·집중·이완 등 목적별 세션이에요. 이어폰을 끼면 바이노럴 효과가 또렷해집니다.',
+              style: AppTypography.tiny),
+        ),
+        for (final r in _recommended)
+          Builder(builder: (context) {
+            final preset = app.presets.byId(r.$1);
+            if (preset == null) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _StatusCard(preset: preset, accent: r.$2),
             );
           }),
         const SizedBox(height: 20),
@@ -127,7 +154,14 @@ class _StatusCard extends StatelessWidget {
     } else if (freq != null) {
       parts.add('${freq.toStringAsFixed(0)}Hz');
     }
-    if (s.drone.enabled) parts.add('드론');
+    if (s.binaural.enabled) {
+      final b = s.binaural.beatHz;
+      parts.add('${b == b.roundToDouble() ? b.toStringAsFixed(0) : b.toStringAsFixed(2)}Hz 바이노럴');
+    } else if (s.pulse.enabled) {
+      parts.add('${s.pulse.rateHz.toStringAsFixed(2)}Hz 펄스');
+    } else if (s.drone.enabled) {
+      parts.add('드론');
+    }
     parts.add('$min분');
     return parts.join(' · ');
   }

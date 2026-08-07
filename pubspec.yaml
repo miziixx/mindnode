@@ -25,6 +25,7 @@ flutter:
   assets:
     - assets/presets/default_presets.json
     - assets/presets/chakra_presets.json
+    - assets/presets/wellness_presets.json
     - assets/audio/nature/
     - assets/audio/pads/
     - assets/audio/chimes/
