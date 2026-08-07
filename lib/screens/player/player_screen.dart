@@ -282,7 +282,7 @@ class PlayerScreen extends StatelessWidget {
             value: pb.masterVolume01,
             onChanged: pb.setMasterVolume,
           ),
-          Text('앱 내부 상대 음량입니다 (실제 dB SPL 아님)',
+          Text('낮출수록 편안하게 오래 듣기 좋아요 · 처음엔 낮게 시작하세요 (앱 내부 상대 음량)',
               style: AppTypography.tiny.copyWith(fontSize: 10)),
         ],
       ),

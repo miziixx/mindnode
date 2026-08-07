@@ -5,6 +5,7 @@ import '../../core/design/app_typography.dart';
 import '../../core/models/audio_asset.dart';
 import '../../core/models/layers.dart';
 import '../../core/models/preset.dart';
+import '../../widgets/layer_hints.dart';
 
 /// 스튜디오 드래프트 레이어 편집 시트(재생 세션과 무관하게 드래프트를 직접 수정).
 Future<void> showStudioLayerEditor(
@@ -223,6 +224,7 @@ class _EditorState extends State<_Editor> {
 
   Widget _slider(String label, String value, double v,
       ValueChanged<double> onChanged) {
+    final hint = layerHint(label);
     return Padding(
       padding: const EdgeInsets.only(top: 14),
       child: Column(
@@ -233,19 +235,36 @@ class _EditorState extends State<_Editor> {
             Text(value, style: AppTypography.tiny),
           ]),
           Slider(value: v.clamp(0.0, 1.0), onChanged: onChanged),
+          if (hint.isNotEmpty)
+            Text(hint,
+                style: AppTypography.tiny
+                    .copyWith(fontSize: 11, color: AppColors.textMuted)),
         ],
       ),
     );
   }
 
   Widget _switchRow(String label, bool value, ValueChanged<bool> onChanged) {
+    final hint = layerHint(label);
     return Padding(
       padding: const EdgeInsets.only(top: 12),
-      child: Row(children: [
-        Expanded(child: Text(label, style: AppTypography.label)),
-        Switch.adaptive(
-            value: value, onChanged: onChanged, activeColor: AppColors.accent),
-      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Expanded(child: Text(label, style: AppTypography.label)),
+            Switch.adaptive(
+                value: value, onChanged: onChanged, activeColor: AppColors.accent),
+          ]),
+          if (hint.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(hint,
+                  style: AppTypography.tiny
+                      .copyWith(fontSize: 11, color: AppColors.textMuted)),
+            ),
+        ],
+      ),
     );
   }
 }

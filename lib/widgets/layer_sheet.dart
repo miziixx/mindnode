@@ -7,6 +7,7 @@ import '../core/models/audio_asset.dart';
 import '../core/models/layers.dart';
 import '../core/state/playback_controller.dart';
 import 'common.dart';
+import 'layer_hints.dart';
 
 /// 레이어 상세 바텀시트. 화면 높이 70~90%까지 확장. 상단에 레이어 포인트색 얇게.
 Future<void> showLayerSheet(BuildContext context, String layerId,
@@ -340,6 +341,7 @@ class _LayerSheet extends StatelessWidget {
 
 Widget _sliderRow(
     String label, String value, double v, ValueChanged<double> onChanged) {
+  final hint = layerHint(label);
   return Padding(
     padding: const EdgeInsets.only(top: 16),
     child: Column(
@@ -350,18 +352,35 @@ Widget _sliderRow(
           Text(value, style: AppTypography.tiny),
         ]),
         Slider(value: v.clamp(0.0, 1.0), onChanged: onChanged),
+        if (hint.isNotEmpty)
+          Text(hint,
+              style: AppTypography.tiny
+                  .copyWith(fontSize: 11, color: AppColors.textMuted)),
       ],
     ),
   );
 }
 
 Widget _toggleRow(String label, bool value, ValueChanged<bool> onChanged) {
+  final hint = layerHint(label);
   return Padding(
     padding: const EdgeInsets.only(top: 12),
-    child: Row(children: [
-      Expanded(child: Text(label, style: AppTypography.label)),
-      AppSwitch(value: value, onChanged: onChanged),
-    ]),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: [
+          Expanded(child: Text(label, style: AppTypography.label)),
+          AppSwitch(value: value, onChanged: onChanged),
+        ]),
+        if (hint.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(hint,
+                style: AppTypography.tiny
+                    .copyWith(fontSize: 11, color: AppColors.textMuted)),
+          ),
+      ],
+    ),
   );
 }
 
@@ -410,6 +429,15 @@ class _FrequencyBlock extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+        const SizedBox(height: 10),
+        Text(
+          label.contains('중심')
+              ? '전체 분위기의 기준음이에요 · 낮추면 묵직·안정, 높이면 맑아져요'
+              : '소리의 색이 달라져요 · 낮을수록 묵직·따뜻, 높을수록 맑고 밝음',
+          style: AppTypography.tiny
+              .copyWith(fontSize: 11, color: AppColors.textMuted),
+          textAlign: TextAlign.center,
         ),
       ]),
     );
