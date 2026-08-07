@@ -21,6 +21,10 @@ jobs:
         run: |
           cd tools/audio_verify
           python run_tests.py
+      - name: Verify preset frequencies (declared vs generated vs reference)
+        run: |
+          cd tools/audio_verify
+          python verify_presets.py
       - uses: actions/upload-artifact@v4
         with:
           name: audio-verification

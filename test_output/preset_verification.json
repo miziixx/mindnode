@@ -1,0 +1,828 @@
+{
+  "summary": {
+    "pass": 21,
+    "total": 21
+  },
+  "presets": [
+    {
+      "id": "uplift_mind",
+      "title": "마음 끌어올리기",
+      "checks": [
+        {
+          "layer": "primary",
+          "declaredHz": 528.0,
+          "measuredHz": 528.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": "Solfeggio 528"
+        },
+        {
+          "layer": "drone.main",
+          "declaredHz": 528.0,
+          "measuredHz": 528.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "Solfeggio 528"
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 264.0,
+        "main": 528.0,
+        "air": 1056.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -29.07
+      }
+    },
+    {
+      "id": "energize_wake",
+      "title": "활력 깨우기",
+      "checks": [
+        {
+          "layer": "primary",
+          "declaredHz": 528.0,
+          "measuredHz": 528.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": "Solfeggio 528"
+        },
+        {
+          "layer": "secondary",
+          "declaredHz": 741.0,
+          "measuredHz": 741.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": "Solfeggio 741"
+        },
+        {
+          "layer": "drone.main",
+          "declaredHz": 528.0,
+          "measuredHz": 528.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "Solfeggio 528"
+        },
+        {
+          "layer": "pulse.rate",
+          "declaredHz": 16.0,
+          "measuredHz": 16.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": ""
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 264.0,
+        "main": 528.0,
+        "air": 1056.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -29.19
+      }
+    },
+    {
+      "id": "abundance_ritual",
+      "title": "풍요 · 돈 들어오는 의식",
+      "checks": [
+        {
+          "layer": "secondary",
+          "declaredHz": 888.0,
+          "measuredHz": 888.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": "888 풍요(상징)"
+        },
+        {
+          "layer": "drone.main",
+          "declaredHz": 432.0,
+          "measuredHz": 432.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "432 튜닝"
+        },
+        {
+          "layer": "pulse.rate",
+          "declaredHz": 8.8,
+          "measuredHz": 8.802,
+          "errorHz": 0.0015,
+          "ok": 1.0,
+          "ref": ""
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 216.0,
+        "main": 432.0,
+        "air": 864.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -30.87
+      }
+    },
+    {
+      "id": "cleanse_negative",
+      "title": "부정적 에너지 정화",
+      "checks": [
+        {
+          "layer": "primary",
+          "declaredHz": 396.0,
+          "measuredHz": 396.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": "Solfeggio 396"
+        },
+        {
+          "layer": "drone.main",
+          "declaredHz": 396.0,
+          "measuredHz": 396.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "Solfeggio 396"
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 198.0,
+        "main": 396.0,
+        "air": 792.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -29.6
+      }
+    },
+    {
+      "id": "meditation_deep",
+      "title": "깊은 명상",
+      "checks": [
+        {
+          "layer": "primary",
+          "declaredHz": 432.0,
+          "measuredHz": 432.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": "432 튜닝"
+        },
+        {
+          "layer": "drone.main",
+          "declaredHz": 432.0,
+          "measuredHz": 432.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "432 튜닝"
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 216.0,
+        "main": 432.0,
+        "air": 864.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -29.91
+      }
+    },
+    {
+      "id": "reiki_self",
+      "title": "레이키 · 셀프",
+      "checks": [
+        {
+          "layer": "secondary",
+          "declaredHz": 528.0,
+          "measuredHz": 528.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": "Solfeggio 528"
+        },
+        {
+          "layer": "drone.main",
+          "declaredHz": 432.0,
+          "measuredHz": 432.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "432 튜닝"
+        },
+        {
+          "layer": "pulse.rate",
+          "declaredHz": 7.83,
+          "measuredHz": 7.828,
+          "errorHz": 0.0018,
+          "ok": 1.0,
+          "ref": "Schumann 7.83"
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 216.0,
+        "main": 432.0,
+        "air": 864.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -30.92
+      }
+    },
+    {
+      "id": "chakra_1_root",
+      "title": "1차크라 · 안정",
+      "checks": [
+        {
+          "layer": "primary",
+          "declaredHz": 396.0,
+          "measuredHz": 396.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": "Solfeggio 396"
+        },
+        {
+          "layer": "drone.main",
+          "declaredHz": 396.0,
+          "measuredHz": 396.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "Solfeggio 396"
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 198.0,
+        "main": 396.0,
+        "air": 792.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -29.07
+      }
+    },
+    {
+      "id": "chakra_2_sacral",
+      "title": "2차크라 · 감정과 창조",
+      "checks": [
+        {
+          "layer": "primary",
+          "declaredHz": 417.0,
+          "measuredHz": 417.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": "Solfeggio 417"
+        },
+        {
+          "layer": "drone.main",
+          "declaredHz": 417.0,
+          "measuredHz": 417.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "Solfeggio 417"
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 208.5,
+        "main": 417.0,
+        "air": 834.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -29.07
+      }
+    },
+    {
+      "id": "chakra_3_solar",
+      "title": "3차크라 · 의지와 활력",
+      "checks": [
+        {
+          "layer": "primary",
+          "declaredHz": 528.0,
+          "measuredHz": 528.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": "Solfeggio 528"
+        },
+        {
+          "layer": "drone.main",
+          "declaredHz": 528.0,
+          "measuredHz": 528.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "Solfeggio 528"
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 264.0,
+        "main": 528.0,
+        "air": 1056.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -29.07
+      }
+    },
+    {
+      "id": "chakra_4_heart",
+      "title": "4차크라 · 사랑과 연결",
+      "checks": [
+        {
+          "layer": "primary",
+          "declaredHz": 639.0,
+          "measuredHz": 639.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": "Solfeggio 639"
+        },
+        {
+          "layer": "drone.main",
+          "declaredHz": 639.0,
+          "measuredHz": 639.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "Solfeggio 639"
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 319.5,
+        "main": 639.0,
+        "air": 1278.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -29.07
+      }
+    },
+    {
+      "id": "chakra_5_throat",
+      "title": "5차크라 · 표현",
+      "checks": [
+        {
+          "layer": "primary",
+          "declaredHz": 741.0,
+          "measuredHz": 741.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": "Solfeggio 741"
+        },
+        {
+          "layer": "drone.main",
+          "declaredHz": 741.0,
+          "measuredHz": 741.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "Solfeggio 741"
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 370.5,
+        "main": 741.0,
+        "air": 1482.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -29.6
+      }
+    },
+    {
+      "id": "chakra_6_thirdeye",
+      "title": "6차크라 · 직관",
+      "checks": [
+        {
+          "layer": "primary",
+          "declaredHz": 852.0,
+          "measuredHz": 852.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": "Solfeggio 852"
+        },
+        {
+          "layer": "drone.main",
+          "declaredHz": 426.0,
+          "measuredHz": 426.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "-"
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 213.0,
+        "main": 426.0,
+        "air": 852.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -33.3
+      }
+    },
+    {
+      "id": "chakra_7_crown",
+      "title": "7차크라 · 명상과 연결",
+      "checks": [
+        {
+          "layer": "primary",
+          "declaredHz": 963.0,
+          "measuredHz": 963.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": "Solfeggio 963"
+        },
+        {
+          "layer": "drone.main",
+          "declaredHz": 481.5,
+          "measuredHz": 481.5,
+          "errorHz": 0.0003,
+          "ok": 1.0,
+          "ref": "-"
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 240.8,
+        "main": 481.5,
+        "air": 963.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -33.3
+      }
+    },
+    {
+      "id": "chakra_full_cycle",
+      "title": "전체 차크라 순환",
+      "checks": [
+        {
+          "layer": "primary",
+          "declaredHz": 396.0,
+          "measuredHz": 396.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": "Solfeggio 396"
+        },
+        {
+          "layer": "drone.main",
+          "declaredHz": 396.0,
+          "measuredHz": 396.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "Solfeggio 396"
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 198.0,
+        "main": 396.0,
+        "air": 792.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -29.07
+      }
+    },
+    {
+      "id": "sleep_delta",
+      "title": "잠이 안 올 때 · 수면 유도",
+      "checks": [
+        {
+          "layer": "drone.main",
+          "declaredHz": 108.0,
+          "measuredHz": 108.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "-"
+        },
+        {
+          "layer": "binaural.left",
+          "declaredHz": 100.0,
+          "measuredHz": 100.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": ""
+        },
+        {
+          "layer": "binaural.beat",
+          "declaredHz": 3.0,
+          "measuredHz": 3.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": ""
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 54.0,
+        "main": 108.0,
+        "air": 216.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "binauralBand": "Delta",
+      "bandExpected": "Delta",
+      "bandOk": true,
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -31.16
+      }
+    },
+    {
+      "id": "deep_sleep",
+      "title": "깊은 수면",
+      "checks": [
+        {
+          "layer": "drone.main",
+          "declaredHz": 90.0,
+          "measuredHz": 90.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "-"
+        },
+        {
+          "layer": "binaural.left",
+          "declaredHz": 90.0,
+          "measuredHz": 90.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": ""
+        },
+        {
+          "layer": "binaural.beat",
+          "declaredHz": 2.0,
+          "measuredHz": 2.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": ""
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 45.0,
+        "main": 90.0,
+        "air": 180.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "binauralBand": "Delta",
+      "bandExpected": "Delta",
+      "bandOk": true,
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -31.53
+      }
+    },
+    {
+      "id": "focus_beta",
+      "title": "집중 · 공부와 업무",
+      "checks": [
+        {
+          "layer": "drone.main",
+          "declaredHz": 220.0,
+          "measuredHz": 220.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "-"
+        },
+        {
+          "layer": "binaural.left",
+          "declaredHz": 220.0,
+          "measuredHz": 220.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": ""
+        },
+        {
+          "layer": "binaural.beat",
+          "declaredHz": 14.0,
+          "measuredHz": 14.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": ""
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 110.0,
+        "main": 220.0,
+        "air": 440.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "binauralBand": "Beta",
+      "bandExpected": "Beta",
+      "bandOk": true,
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -31.13
+      }
+    },
+    {
+      "id": "flow_gamma",
+      "title": "몰입 · 딥워크",
+      "checks": [
+        {
+          "layer": "drone.main",
+          "declaredHz": 220.0,
+          "measuredHz": 220.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "-"
+        },
+        {
+          "layer": "binaural.left",
+          "declaredHz": 220.0,
+          "measuredHz": 220.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": ""
+        },
+        {
+          "layer": "binaural.beat",
+          "declaredHz": 40.0,
+          "measuredHz": 40.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": ""
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 110.0,
+        "main": 220.0,
+        "air": 440.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "binauralBand": "Gamma",
+      "bandExpected": "Gamma",
+      "bandOk": true,
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -32.08
+      }
+    },
+    {
+      "id": "calm_alpha",
+      "title": "불안·긴장 완화",
+      "checks": [
+        {
+          "layer": "primary",
+          "declaredHz": 432.0,
+          "measuredHz": 432.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": "432 튜닝"
+        },
+        {
+          "layer": "drone.main",
+          "declaredHz": 216.0,
+          "measuredHz": 216.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "-"
+        },
+        {
+          "layer": "binaural.left",
+          "declaredHz": 216.0,
+          "measuredHz": 216.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": ""
+        },
+        {
+          "layer": "binaural.beat",
+          "declaredHz": 10.0,
+          "measuredHz": 10.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": ""
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 108.0,
+        "main": 216.0,
+        "air": 432.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "binauralBand": "Alpha",
+      "bandExpected": "Alpha",
+      "bandOk": true,
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -30.54
+      }
+    },
+    {
+      "id": "theta_relax",
+      "title": "세타 · 깊은 이완",
+      "checks": [
+        {
+          "layer": "drone.main",
+          "declaredHz": 216.0,
+          "measuredHz": 216.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "-"
+        },
+        {
+          "layer": "binaural.left",
+          "declaredHz": 216.0,
+          "measuredHz": 216.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": ""
+        },
+        {
+          "layer": "binaural.beat",
+          "declaredHz": 6.0,
+          "measuredHz": 6.0,
+          "errorHz": 0.0,
+          "ok": 1.0,
+          "ref": ""
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 108.0,
+        "main": 216.0,
+        "air": 432.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "binauralBand": "Theta",
+      "bandExpected": "Theta",
+      "bandOk": true,
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -30.93
+      }
+    },
+    {
+      "id": "stress_relief",
+      "title": "스트레스 해소 · 7.83Hz",
+      "checks": [
+        {
+          "layer": "drone.main",
+          "declaredHz": 432.0,
+          "measuredHz": 432.0,
+          "errorHz": 0.0004,
+          "ok": 1.0,
+          "ref": "432 튜닝"
+        },
+        {
+          "layer": "pulse.rate",
+          "declaredHz": 7.83,
+          "measuredHz": 7.828,
+          "errorHz": 0.0018,
+          "ok": 1.0,
+          "ref": "Schumann 7.83"
+        }
+      ],
+      "status": "PASS",
+      "droneVoices": {
+        "sub": 216.0,
+        "main": 432.0,
+        "air": 864.0,
+        "subPresent": true,
+        "airPresent": true
+      },
+      "render": {
+        "clipped": 0,
+        "peakDbfs": -31.28
+      }
+    }
+  ]
+}
