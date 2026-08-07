@@ -10,3 +10,4 @@ build/
 __pycache__/
 *.pyc
 test_output/preset_renders/
+assets/launcher_icons/concepts/
