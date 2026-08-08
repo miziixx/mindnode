@@ -56,6 +56,24 @@ def apply_android():
         f.write(xml)
     print("patched AndroidManifest.xml (permissions + PlaybackService)")
 
+    # compileSdk 상향 — 최신 플러그인(flutter_plugin_android_lifecycle 등)이
+    # compileSdk 36 이상을 요구. 생성된 build.gradle(.kts) 의 값을 36으로 고정.
+    for gname in ("build.gradle.kts", "build.gradle"):
+        gpath = os.path.join(ROOT, "android", "app", gname)
+        if not os.path.exists(gpath):
+            continue
+        with open(gpath, "r", encoding="utf-8") as f:
+            g = f.read()
+        g2 = re.sub(r"compileSdk\s*=\s*flutter\.compileSdkVersion",
+                    "compileSdk = 36", g)  # Kotlin DSL
+        g2 = re.sub(r"compileSdkVersion\s+flutter\.compileSdkVersion",
+                    "compileSdkVersion 36", g2)  # Groovy
+        if g2 != g:
+            with open(gpath, "w", encoding="utf-8") as f:
+                f.write(g2)
+            print(f"patched android/app/{gname} (compileSdk = 36)")
+        break
+
     # 앱 아이콘(생성된 mipmap 덮어쓰기 + 적응형 아이콘)
     icon_src = os.path.join(ROOT, "assets", "launcher_icons", "android")
     res = os.path.join(ROOT, "android", "app", "src", "main", "res")

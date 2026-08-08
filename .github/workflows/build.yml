@@ -44,7 +44,6 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: "3.24.5"
       - run: flutter --version
       # 플랫폼 스캐폴드 생성(lib/·pubspec·assets 는 유지됨)
       - run: flutter create --org com.mindsound --project-name mindsound --platforms=android .
@@ -84,7 +83,6 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: "3.24.5"
       - run: flutter create --org com.mindsound --project-name mindsound --platforms=ios .
       - run: python3 tools/apply_native.py --platform ios
       - run: flutter pub get
@@ -107,7 +105,6 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: "3.24.5"
       - run: flutter create --org com.mindsound --project-name mindsound --platforms=android .
       - run: python3 tools/apply_native.py --platform android
       - run: flutter pub get
