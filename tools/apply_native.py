@@ -74,6 +74,47 @@ def apply_android():
             print(f"patched android/app/{gname} (compileSdk = 36)")
         break
 
+    # 플러그인(서브프로젝트) compileSdk 36 강제. 최신 플러그인
+    # (flutter_plugin_android_lifecycle 등)이 36을 요구하지만 앱의 compileSdk 가
+    # 플러그인에 자동 전파되지 않는 환경이 있어, 루트 gradle 에서 일괄 지정한다.
+    root_kts = os.path.join(ROOT, "android", "build.gradle.kts")
+    root_groovy = os.path.join(ROOT, "android", "build.gradle")
+    if os.path.exists(root_kts):
+        with open(root_kts, "r", encoding="utf-8") as f:
+            rg = f.read()
+        if "FORCE_PLUGIN_COMPILE_SDK" not in rg:
+            rg += (
+                "\n// FORCE_PLUGIN_COMPILE_SDK — 최신 플러그인 compileSdk 36 요구 대응.\n"
+                "subprojects {\n"
+                "    afterEvaluate {\n"
+                "        val ext = extensions.findByName(\"android\")\n"
+                "        if (ext is com.android.build.gradle.BaseExtension) {\n"
+                "            ext.compileSdkVersion(36)\n"
+                "        }\n"
+                "    }\n"
+                "}\n"
+            )
+            with open(root_kts, "w", encoding="utf-8") as f:
+                f.write(rg)
+            print("patched android/build.gradle.kts (force plugin compileSdk = 36)")
+    elif os.path.exists(root_groovy):
+        with open(root_groovy, "r", encoding="utf-8") as f:
+            rg = f.read()
+        if "FORCE_PLUGIN_COMPILE_SDK" not in rg:
+            rg += (
+                "\n// FORCE_PLUGIN_COMPILE_SDK\n"
+                "subprojects {\n"
+                "    afterEvaluate { project ->\n"
+                "        if (project.hasProperty('android')) {\n"
+                "            project.android { compileSdkVersion 36 }\n"
+                "        }\n"
+                "    }\n"
+                "}\n"
+            )
+            with open(root_groovy, "w", encoding="utf-8") as f:
+                f.write(rg)
+            print("patched android/build.gradle (force plugin compileSdk = 36)")
+
     # 앱 아이콘(생성된 mipmap 덮어쓰기 + 적응형 아이콘)
     icon_src = os.path.join(ROOT, "assets", "launcher_icons", "android")
     res = os.path.join(ROOT, "android", "app", "src", "main", "res")
