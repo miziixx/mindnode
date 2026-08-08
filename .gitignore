@@ -11,3 +11,8 @@ __pycache__/
 *.pyc
 test_output/preset_renders/
 assets/launcher_icons/concepts/
+# 아이콘 시안 프리뷰(생성기로 재생성 가능 → 미추적)
+assets/launcher_icons/refine/
+assets/launcher_icons/mystic/
+assets/launcher_icons/mystic2/
+assets/launcher_icons/wave/
