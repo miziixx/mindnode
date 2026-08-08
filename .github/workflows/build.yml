@@ -53,23 +53,25 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze --no-fatal-warnings --no-fatal-infos || true
       - run: flutter test
-      - run: flutter build apk --debug
+      # 릴리스 빌드(개인 설치용). 별도 키스토어가 없으면 Flutter 기본 템플릿이
+      # release 를 debug 키로 서명하므로 사이드로딩 설치가 가능하다.
+      - run: flutter build apk --release
       - name: Rename APK
-        run: cp build/app/outputs/flutter-apk/app-debug.apk mindsound-debug.apk
+        run: cp build/app/outputs/flutter-apk/app-release.apk mindsound-release.apk
       - uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: mindsound-debug.apk
+          path: mindsound-release.apk
       # 로그인 없이 받을 수 있는 상시 다운로드 링크(.apk) 제공.
-      # main 브랜치에서만 게시(개인용 롤링 디버그 빌드).
+      # main 브랜치에서만 게시(개인용 롤링 릴리스 빌드).
       - name: Publish APK to rolling pre-release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: debug-latest
-          name: 마인드사운드 디버그 APK (최신)
+          tag_name: release-latest
+          name: 마인드사운드 APK (릴리스·최신)
           prerelease: true
-          files: mindsound-debug.apk
+          files: mindsound-release.apk
 
   ios:
     needs: audio-verify
