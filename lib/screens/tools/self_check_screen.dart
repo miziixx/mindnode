@@ -5,9 +5,11 @@ import '../../core/audio/tone_probe.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/design/app_tokens.dart';
 import '../../core/design/app_typography.dart';
+import '../../core/state/app_state.dart';
 import '../../core/state/playback_controller.dart';
 import '../../widgets/app_icons.dart';
 import '../../widgets/common.dart';
+import '../../widgets/dreamy_background.dart';
 
 /// 주파수 자가 진단. 기기 CPU에서 생성 알고리즘을 직접 돌려
 /// "선언한 Hz = 만들어진 Hz" 를 Goertzel 로 측정해 보여준다(마이크 미사용).
@@ -51,7 +53,16 @@ class _SelfCheckScreenState extends State<SelfCheckScreen> {
     final allPass = results != null && results.every((r) => r.pass);
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SingleChildScrollView(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: DreamyBackground(
+              accent: AppColors.accent,
+              reduceMotion: context.watch<AppState>().settings.reduceMotion,
+              particleCount: 24,
+            ),
+          ),
+          SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(20, topInset + 12, 20, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -146,6 +157,8 @@ class _SelfCheckScreenState extends State<SelfCheckScreen> {
             ],
           ],
         ),
+      ),
+        ],
       ),
     );
   }

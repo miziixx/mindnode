@@ -12,6 +12,7 @@ import 'screens/records/records_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'widgets/bottom_nav.dart';
+import 'widgets/dreamy_background.dart';
 import 'widgets/mini_player.dart';
 
 /// 앱 루트: 온보딩 게이트 + 탭 셸(하단바 + 미니플레이어 상시 유지).
@@ -53,7 +54,17 @@ class _TabShell extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Center(
+      body: Stack(
+        children: [
+          // 모든 탭 화면 공통의 은은한 몽환 배경(단일 애니메이션).
+          Positioned.fill(
+            child: DreamyBackground(
+              accent: AppColors.accent,
+              reduceMotion: app.settings.reduceMotion,
+              particleCount: 30,
+            ),
+          ),
+          Center(
         child: ConstrainedBox(
           constraints:
               const BoxConstraints(maxWidth: AppMetrics.contentMaxWidth),
@@ -83,6 +94,8 @@ class _TabShell extends StatelessWidget {
             ],
           ),
         ),
+      ),
+        ],
       ),
     );
   }

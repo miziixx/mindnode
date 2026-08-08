@@ -13,6 +13,7 @@ import '../../core/state/app_state.dart';
 import '../../core/state/playback_controller.dart';
 import '../../widgets/app_icons.dart';
 import '../../widgets/common.dart';
+import '../../widgets/dreamy_background.dart';
 
 /// 레이키 세션 종류.
 enum ReikiKind { self, other, pet, space, chakra, custom }
@@ -97,7 +98,17 @@ class _ReikiSetupScreenState extends State<ReikiSetupScreen> {
             stops: const [0.0, 0.55],
           ),
         ),
-        child: ListView(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: DreamyBackground(
+                accent: _accent,
+                reduceMotion:
+                    context.watch<AppState>().settings.reduceMotion,
+                particleCount: 24,
+              ),
+            ),
+            ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
           children: [
             const Eyebrow('세션 종류'),
@@ -187,6 +198,8 @@ class _ReikiSetupScreenState extends State<ReikiSetupScreen> {
                 style: AppTypography.tiny),
             const SizedBox(height: 10),
             PrimaryButton(label: '시작', icon: AppIcons.play, onPressed: _start),
+          ],
+        ),
           ],
         ),
       ),

@@ -5,6 +5,7 @@ import '../../core/design/app_colors.dart';
 import '../../core/design/app_typography.dart';
 import '../../core/state/app_state.dart';
 import '../../widgets/common.dart';
+import '../../widgets/dreamy_background.dart';
 
 /// 온보딩(최대 3단계). 강제 회원가입/권한 요청 없음.
 class OnboardingScreen extends StatefulWidget {
@@ -47,7 +48,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final last = _page == _pages.length - 1;
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: DreamyBackground(
+              accent: AppColors.accent,
+              reduceMotion: context.watch<AppState>().settings.reduceMotion,
+              particleCount: 26,
+            ),
+          ),
+          SafeArea(
         child: Column(
           children: [
             // 건너뛰기: 온보딩을 보지 않고 바로 시작.
@@ -134,6 +144,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ],
         ),
+      ),
+        ],
       ),
     );
   }
