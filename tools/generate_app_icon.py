@@ -16,57 +16,59 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 OUT = os.path.join(ROOT, "assets", "launcher_icons")
 os.makedirs(OUT, exist_ok=True)
 
-# 팔레트(앱 토큰과 동일)
-BG_TOP = (18, 22, 30)      # #12161E
-BG_BOT = (11, 13, 18)      # #0B0D12
-ACCENT = (120, 150, 185)   # #7896B9
-VIOLET = (138, 115, 157)   # crown 뮤트 바이올렛
-WHITE = (241, 240, 235)
+# 팔레트 — 이리데센트(오로라) 색 스톱 + 파스텔 완화
+STOPS = [(120, 182, 192), (112, 152, 200), (150, 122, 195),
+         (186, 124, 178), (120, 182, 192)]
+PASTEL = (206, 200, 226)   # 채도 완화용 라벤더
+WHITE = (245, 244, 240)
 
 SS = 4  # 슈퍼샘플
 
 
+def _irid(u, soft=0.32):
+    """u in [0,1] → 이리데센트 색(파스텔로 부드럽게)."""
+    u = u % 1.0
+    seg = u * (len(STOPS) - 1)
+    i = int(seg); f = seg - i
+    a = STOPS[i]; b = STOPS[min(i + 1, len(STOPS) - 1)]
+    col = [a[k] * (1 - f) + b[k] * f for k in range(3)]
+    col = [col[k] * (1 - soft) + PASTEL[k] * soft for k in range(3)]
+    return tuple(int(round(c)) for c in col)
+
+
 def render_master(size=1024):
-    """사운드 만다라 — 중심에서 방사되는 소리 막대(라디얼 이퀄라이저)."""
+    """빛나는 파형 — 둥근 막대 이퀄라이저(부드러운 벨 포락선)."""
     S = size * SS
     cx = cy = S / 2
 
-    # 배경: 대각 그라데이션(딥 인디고 → 차콜) + 중앙 은은한 글로우
-    yy, xx = np.mgrid[0:S, 0:S].astype(np.float64) / S
-    t = (xx * math.cos(math.pi / 4) + yy * math.sin(math.pi / 4))
-    t = (t - t.min()) / (t.max() - t.min())
-    c0 = np.array((26, 24, 46)); c1 = np.array((11, 13, 18))
-    bg = (c0[None, None] * (1 - t)[:, :, None] + c1[None, None] * t[:, :, None])
-    d = np.sqrt((np.arange(S)[None, :] - cx) ** 2 + (np.arange(S)[:, None] - cy) ** 2)
-    glow = np.exp(-(d / (S * 0.30)) ** 2) * 0.20
-    for i in range(3):
-        bg[:, :, i] = bg[:, :, i] * (1 - glow) + ACCENT[i] * glow
+    # 배경: 세로 그라데이션(딥 인디고 → 차콜)
+    t = np.clip(np.arange(S)[:, None] / S, 0, 1)
+    bg = (np.array((20, 20, 34))[None, None] * (1 - t)[:, :, None] +
+          np.array((10, 11, 17))[None, None] * t[:, :, None])
+    bg = np.tile(bg, (1, S, 1))
     base = Image.fromarray(np.clip(bg, 0, 255).astype(np.uint8), "RGB").convert("RGBA")
 
-    # 방사형 막대
+    # 둥근 막대 파형
     layer = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     dr = ImageDraw.Draw(layer)
-    n = 56
-    inner = S * 0.17
-    lw = int(S * 0.019)
+    n = 15
+    span = S * 0.72
+    x0 = cx - span / 2
+    gap = span / n
+    bw = gap * 0.5
     for i in range(n):
-        ang = i / n * 2 * math.pi
-        h = 0.5 + 0.5 * math.sin(i / n * 2 * math.pi * 3)  # 부드러운 물결
-        outer = inner + S * (0.05 + 0.17 * h)
-        f = i / n
-        col = (int(ACCENT[0] * (1 - f) + VIOLET[0] * f),
-               int(ACCENT[1] * (1 - f) + VIOLET[1] * f),
-               int(ACCENT[2] * (1 - f) + VIOLET[2] * f))
-        x0 = cx + inner * math.cos(ang); y0 = cy + inner * math.sin(ang)
-        x1 = cx + outer * math.cos(ang); y1 = cy + outer * math.sin(ang)
-        dr.line([(x0, y0), (x1, y1)], fill=col + (255,), width=lw)
-    # 중심 코어
-    core = S * 0.045
-    dr.ellipse([cx - core, cy - core, cx + core, cy + core], fill=WHITE + (255,))
+        u = (i + 0.5) / n
+        env = math.sin(u * math.pi) ** 0.7           # 가운데가 큰 벨 포락선
+        h = S * 0.22 * (0.3 + 0.7 * env)
+        x = x0 + gap * i + gap * 0.5
+        col = _irid(0.12 + u * 0.72)
+        dr.rounded_rectangle([x - bw / 2, cy - h, x + bw / 2, cy + h],
+                             radius=bw / 2, fill=col + (235,))
 
-    glow_layer = layer.filter(ImageFilter.GaussianBlur(radius=S * 0.02))
-    base.alpha_composite(glow_layer)
-    base.alpha_composite(glow_layer)
+    # 부드러운 글로우(블룸)
+    g = layer.filter(ImageFilter.GaussianBlur(radius=S * 0.026))
+    for _ in range(3):
+        base.alpha_composite(g)
     base.alpha_composite(layer)
     return base.resize((size, size), Image.LANCZOS).convert("RGB")
 
