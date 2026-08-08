@@ -93,6 +93,8 @@ class SettingsScreen extends StatelessWidget {
               (v) { s.showFrequencyDecimals = v; save(); }),
           _switchRow('호흡 가이드', '재생 중 들숨·날숨 리듬 안내', s.breathingGuide,
               (v) { s.breathingGuide = v; save(); }),
+          _switchRow('호흡 음성 안내', '들이마시고·멈추고·내쉬라고 음성으로 안내 (기기 음성 사용)',
+              s.breathingVoice, (v) { s.breathingVoice = v; save(); }),
         ]),
         _group('도구', [
           _actionRow(context, '주파수 자가 진단', '이 기기에서 생성 주파수 정확도 측정',

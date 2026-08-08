@@ -545,6 +545,7 @@ class _ReikiPlayScreenState extends State<ReikiPlayScreen>
                                   accent: _accent,
                                   active: animate,
                                   reduceMotion: app.settings.reduceMotion,
+                                  voice: app.settings.breathingVoice,
                                 ),
                                 const SizedBox(height: 14),
                                 Text(pb.formatTime(_meditationLeft),

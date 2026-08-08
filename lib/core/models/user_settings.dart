@@ -27,6 +27,7 @@ class UserSettings {
   bool largeText;
   bool showFrequencyDecimals;
   bool breathingGuide; // 재생 중 호흡 가이드 표시
+  bool breathingVoice; // 호흡 가이드 음성 안내(TTS)
   // 온보딩
   bool onboardingDone;
 
@@ -54,6 +55,7 @@ class UserSettings {
     this.largeText = false,
     this.showFrequencyDecimals = true,
     this.breathingGuide = false,
+    this.breathingVoice = false,
     this.onboardingDone = false,
   });
 
@@ -85,6 +87,7 @@ class UserSettings {
         largeText: j['largeText'] as bool? ?? false,
         showFrequencyDecimals: j['showFrequencyDecimals'] as bool? ?? true,
         breathingGuide: j['breathingGuide'] as bool? ?? false,
+        breathingVoice: j['breathingVoice'] as bool? ?? false,
         onboardingDone: j['onboardingDone'] as bool? ?? false,
       );
 
@@ -112,6 +115,7 @@ class UserSettings {
         'largeText': largeText,
         'showFrequencyDecimals': showFrequencyDecimals,
         'breathingGuide': breathingGuide,
+        'breathingVoice': breathingVoice,
         'onboardingDone': onboardingDone,
       };
 }

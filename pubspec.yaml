@@ -14,6 +14,7 @@ dependencies:
   path_provider: ^2.1.3
   file_picker: ^8.0.0+1
   share_plus: ^9.0.0
+  flutter_tts: ^3.8.5 # 기기 내장 TTS(오프라인) — 호흡 음성 안내
 
 dev_dependencies:
   flutter_test:

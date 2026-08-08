@@ -103,6 +103,7 @@ class PlayerScreen extends StatelessWidget {
                     accent: accent,
                     active: pb.isPlaying,
                     reduceMotion: app.settings.reduceMotion,
+                    voice: app.settings.breathingVoice,
                   ),
                 ],
                 const SizedBox(height: 24),

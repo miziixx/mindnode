@@ -73,8 +73,11 @@ jobs:
           prerelease: true
           files: mindsound-release.apk
 
+  # iOS 빌드는 macOS 러너(비용 10배)라 수동 실행(workflow_dispatch)에서만 돈다.
+  # GitHub Actions 분(minutes) 절약용.
   ios:
     needs: audio-verify
+    if: github.event_name == 'workflow_dispatch'
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
@@ -93,6 +96,7 @@ jobs:
   # APK 빌드(android 잡)와 독립적으로 병렬 실행되어 배포를 막지 않는다.
   android-e2e:
     needs: audio-verify
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
