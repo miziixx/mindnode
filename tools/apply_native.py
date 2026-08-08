@@ -79,12 +79,15 @@ def apply_android():
     # 플러그인에 자동 전파되지 않는 환경이 있어, 루트 gradle 에서 일괄 지정한다.
     root_kts = os.path.join(ROOT, "android", "build.gradle.kts")
     root_groovy = os.path.join(ROOT, "android", "build.gradle")
+    # 주의: afterEvaluate 는 파일 '앞쪽'에서 등록해야 한다. 루트 gradle 뒤쪽의
+    # `subprojects { evaluationDependsOn(":app") }` 가 서브프로젝트를 먼저 평가하므로,
+    # 끝에 붙이면 "already evaluated" 오류가 난다 → 파일 맨 앞에 prepend.
     if os.path.exists(root_kts):
         with open(root_kts, "r", encoding="utf-8") as f:
             rg = f.read()
         if "FORCE_PLUGIN_COMPILE_SDK" not in rg:
-            rg += (
-                "\n// FORCE_PLUGIN_COMPILE_SDK — 최신 플러그인 compileSdk 36 요구 대응.\n"
+            block = (
+                "// FORCE_PLUGIN_COMPILE_SDK — 최신 플러그인 compileSdk 36 요구 대응.\n"
                 "subprojects {\n"
                 "    afterEvaluate {\n"
                 "        val ext = extensions.findByName(\"android\")\n"
@@ -92,27 +95,27 @@ def apply_android():
                 "            ext.compileSdkVersion(36)\n"
                 "        }\n"
                 "    }\n"
-                "}\n"
+                "}\n\n"
             )
             with open(root_kts, "w", encoding="utf-8") as f:
-                f.write(rg)
+                f.write(block + rg)
             print("patched android/build.gradle.kts (force plugin compileSdk = 36)")
     elif os.path.exists(root_groovy):
         with open(root_groovy, "r", encoding="utf-8") as f:
             rg = f.read()
         if "FORCE_PLUGIN_COMPILE_SDK" not in rg:
-            rg += (
-                "\n// FORCE_PLUGIN_COMPILE_SDK\n"
+            block = (
+                "// FORCE_PLUGIN_COMPILE_SDK\n"
                 "subprojects {\n"
                 "    afterEvaluate { project ->\n"
                 "        if (project.hasProperty('android')) {\n"
                 "            project.android { compileSdkVersion 36 }\n"
                 "        }\n"
                 "    }\n"
-                "}\n"
+                "}\n\n"
             )
             with open(root_groovy, "w", encoding="utf-8") as f:
-                f.write(rg)
+                f.write(block + rg)
             print("patched android/build.gradle (force plugin compileSdk = 36)")
 
     # 앱 아이콘(생성된 mipmap 덮어쓰기 + 적응형 아이콘)
