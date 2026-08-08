@@ -8,14 +8,11 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-if [ ! -d android ]; then
-  echo "▶ 최초 1회: Android 스캐폴드 생성 + 네이티브 엔진 오버레이"
-  flutter create --org com.mindsound --project-name mindsound --platforms=android .
-  python3 tools/apply_native.py --platform android
-else
-  echo "▶ android/ 이미 있음 — 네이티브 오버레이만 갱신"
-  python3 tools/apply_native.py --platform android
-fi
+# flutter create 는 기존 파일을 덮어쓰지 않아 옛 패치가 남는다 → 매번 새로 생성.
+echo "▶ android/ 정리 후 스캐폴드 생성 + 네이티브 엔진 오버레이"
+rm -rf android
+flutter create --org com.mindsound --project-name mindsound --platforms=android .
+python3 tools/apply_native.py --platform android
 
 flutter pub get
 

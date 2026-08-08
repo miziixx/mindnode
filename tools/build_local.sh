@@ -12,6 +12,11 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."   # 저장소 루트로 이동
 
+echo "▶ 0/4  이전 android/ 정리 (CI와 동일하게 깨끗한 상태에서 시작)"
+# flutter create 는 기존 파일을 덮어쓰지 않으므로, 남아있으면 옛 패치가 그대로
+# 유지돼 버린다. 매번 새로 생성되도록 삭제.
+rm -rf android
+
 echo "▶ 1/4  Android 플랫폼 스캐폴드 생성 (flutter create)"
 flutter create --org com.mindsound --project-name mindsound --platforms=android .
 
