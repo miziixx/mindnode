@@ -60,6 +60,20 @@ class PlaybackService : Service() {
         }
     }
 
+    /**
+     * 사용자가 최근 앱 목록에서 앱을 밀어 종료(task removed)하면 재생을 즉시 멈춘다.
+     * (포그라운드 서비스가 살아남아 소리가 계속 나던 문제 해결.)
+     */
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        try {
+            MindSoundAudio.engine?.stop(graceful = false)
+            MindSoundAudio.engine?.dispose()
+        } catch (_: Exception) {}
+        MindSoundAudio.engine = null
+        stopSelf()
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onDestroy() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) stopForeground(STOP_FOREGROUND_REMOVE)
         else @Suppress("DEPRECATION") stopForeground(true)

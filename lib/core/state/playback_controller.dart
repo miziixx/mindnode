@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show WidgetsBinding, WidgetsBindingObserver, AppLifecycleState;
 
 import '../audio/audio_engine_interface.dart';
 import '../audio/audio_events.dart';
@@ -17,7 +18,7 @@ import '../data/settings_repository.dart';
 /// - 세션은 프리셋의 **깊은 복제**를 사용해 원본을 덮어쓰지 않는다.
 /// - 네이티브 이벤트를 authoritative 로 반영하되, 네이티브 미연결 상황에서도
 ///   UI가 일관되도록 Dart 측 1초 틱커를 보조 진행 표시로 둔다.
-class PlaybackController extends ChangeNotifier {
+class PlaybackController extends ChangeNotifier with WidgetsBindingObserver {
   PlaybackController({
     required this.engine,
     required this.presets,
@@ -25,6 +26,19 @@ class PlaybackController extends ChangeNotifier {
     required this.settingsRepo,
   }) {
     _sub = engine.events.listen(_onEvent, onError: (_) {});
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  /// 앱이 백그라운드로 갈 때, '백그라운드 재생'이 꺼져 있으면 일시정지한다.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState lifecycle) {
+    if (lifecycle == AppLifecycleState.paused ||
+        lifecycle == AppLifecycleState.hidden) {
+      if (!settingsRepo.settings.backgroundPlayback &&
+          state == PlaybackState.playing) {
+        pause();
+      }
+    }
   }
 
   final AudioEngineInterface engine;
@@ -563,6 +577,7 @@ class PlaybackController extends ChangeNotifier {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _ticker?.cancel();
     _sub?.cancel();
     engine.dispose();

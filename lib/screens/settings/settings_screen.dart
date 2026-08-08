@@ -46,6 +46,9 @@ class SettingsScreen extends StatelessWidget {
               (v) { s.pauseOnHeadphoneUnplug = v; save(); }),
           _switchRow('세션 완료 후 자동 정지', null, s.autoStopAfterComplete,
               (v) { s.autoStopAfterComplete = v; save(); }),
+          _switchRow('백그라운드 재생', '화면을 끄거나 다른 앱으로 가도 계속 재생 (끄면 자동 일시정지)',
+              s.backgroundPlayback,
+              (v) { s.backgroundPlayback = v; save(); }),
         ]),
         _group('오디오', [
           _valueRow(context, '최초 시작 음량', '${s.initialMasterVolumePercent}%',

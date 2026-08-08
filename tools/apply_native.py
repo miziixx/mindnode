@@ -47,6 +47,7 @@ def apply_android():
             '        <service\n'
             '            android:name=".PlaybackService"\n'
             '            android:exported="false"\n'
+            '            android:stopWithTask="true"\n'
             '            android:foregroundServiceType="mediaPlayback"/>\n'
         )
         xml = xml.replace("</application>", service + "    </application>")

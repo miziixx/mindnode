@@ -13,7 +13,6 @@ import '../../core/state/app_state.dart';
 import '../../core/state/playback_controller.dart';
 import '../../widgets/app_icons.dart';
 import '../../widgets/common.dart';
-import '../../widgets/resonance_visualizer.dart';
 
 /// 레이키 세션 종류.
 enum ReikiKind { self, other, pet, space, chakra, custom }
@@ -27,12 +26,19 @@ const _reikiKindLabels = {
   ReikiKind.custom: '사용자 정의',
 };
 
-/// 셀프 레이키 손 위치(예시). 사용자 수정 가능 범위는 추후 확장.
-const _selfPositions = ['정수리', '눈·이마', '목·가슴', '가슴', '명치', '아랫배', '등·허리'];
+/// 세션 종류별 손 위치 풀(사용자가 켜고 끌 수 있음).
+const _reikiPositionPools = {
+  ReikiKind.self: ['정수리', '눈·이마', '목·가슴', '가슴', '명치', '아랫배', '등·허리'],
+  ReikiKind.other: ['머리', '눈·이마', '목', '가슴', '명치', '복부', '등 위', '등 아래', '무릎', '발'],
+  ReikiKind.pet: ['머리', '목·어깨', '등', '배', '엉덩이·다리'],
+  ReikiKind.space: ['공간 중심', '동쪽', '남쪽', '서쪽', '북쪽'],
+  ReikiKind.chakra: ['뿌리', '천골', '태양신경총', '심장', '목', '제3의 눈', '정수리'],
+  ReikiKind.custom: ['위치 1', '위치 2', '위치 3', '위치 4', '위치 5', '위치 6'],
+};
 
 void openReiki(BuildContext context) {
-  Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const ReikiSetupScreen()));
+  Navigator.of(context)
+      .push(MaterialPageRoute(builder: (_) => const ReikiSetupScreen()));
 }
 
 class ReikiSetupScreen extends StatefulWidget {
@@ -47,6 +53,9 @@ class _ReikiSetupScreenState extends State<ReikiSetupScreen> {
   int _intervalMin = 5;
   bool _chime = true;
   bool _vibration = true;
+  late Set<String> _enabled; // 선택된 부위
+
+  static const _accent = ChakraColors.heart;
 
   @override
   void initState() {
@@ -56,63 +65,130 @@ class _ReikiSetupScreenState extends State<ReikiSetupScreen> {
     _intervalMin = s.reikiHandChangeIntervalSec ~/ 60;
     _chime = s.reikiChime;
     _vibration = s.reikiVibration;
+    _enabled = {..._reikiPositionPools[_kind]!};
   }
+
+  void _selectKind(ReikiKind k) {
+    setState(() {
+      _kind = k;
+      _enabled = {..._reikiPositionPools[k]!};
+    });
+  }
+
+  List<String> get _positionsInOrder =>
+      _reikiPositionPools[_kind]!.where(_enabled.contains).toList();
 
   @override
   Widget build(BuildContext context) {
+    final pool = _reikiPositionPools[_kind]!;
     return Scaffold(
       backgroundColor: AppColors.deep,
       appBar: AppBar(
-        backgroundColor: AppColors.deep,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: const Text('레이키'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          const Eyebrow('세션 종류'),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final k in ReikiKind.values)
-                ChoiceChip(
-                  label: Text(_reikiKindLabels[k]!),
-                  selected: _kind == k,
-                  onSelected: (_) => setState(() => _kind = k),
-                  selectedColor: AppColors.accent.withOpacity(0.3),
-                  backgroundColor: AppColors.surface2,
-                  labelStyle: AppTypography.label,
-                ),
-            ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: RadialGradient(
+            center: const Alignment(0, -0.7),
+            radius: 1.1,
+            colors: [_accent.withOpacity(0.10), AppColors.deep],
+            stops: const [0.0, 0.55],
           ),
-          const SizedBox(height: 24),
-          _sliderCard('세션 길이', '$_lengthMin분', _lengthMin.toDouble(), 10, 90,
-              (v) => setState(() => _lengthMin = v.round())),
-          _sliderCard('손 위치 변경', '$_intervalMin분마다', _intervalMin.toDouble(),
-              1, 10, (v) => setState(() => _intervalMin = v.round())),
-          SurfaceCard(
-            child: Column(children: [
-              Row(children: [
-                Expanded(child: Text('차임', style: AppTypography.label)),
-                AppSwitch(value: _chime, onChanged: (v) => setState(() => _chime = v)),
+        ),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+          children: [
+            const Eyebrow('세션 종류'),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final k in ReikiKind.values)
+                  _SelectPill(
+                    label: _reikiKindLabels[k]!,
+                    selected: _kind == k,
+                    accent: _accent,
+                    onTap: () => _selectKind(k),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 22),
+            // 부위 선택
+            SurfaceCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text('부위 선택',
+                            style: AppTypography.label
+                                .copyWith(fontWeight: FontWeight.w700)),
+                      ),
+                      Text('${_enabled.length} / ${pool.length}',
+                          style: AppTypography.tiny),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text('원하는 부위만 켜세요 · 켠 순서대로 진행됩니다',
+                      style: AppTypography.tiny.copyWith(fontSize: 10)),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final p in pool)
+                        _SelectPill(
+                          label: p,
+                          selected: _enabled.contains(p),
+                          accent: _accent,
+                          dense: true,
+                          onTap: () => setState(() {
+                            if (_enabled.contains(p)) {
+                              if (_enabled.length > 1) _enabled.remove(p);
+                            } else {
+                              _enabled.add(p);
+                            }
+                          }),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            _sliderCard('세션 길이', '$_lengthMin분', _lengthMin.toDouble(), 10, 90,
+                (v) => setState(() => _lengthMin = v.round())),
+            _sliderCard('부위 변경 간격', '$_intervalMin분마다', _intervalMin.toDouble(),
+                1, 10, (v) => setState(() => _intervalMin = v.round())),
+            SurfaceCard(
+              child: Column(children: [
+                Row(children: [
+                  Expanded(child: Text('차임', style: AppTypography.label)),
+                  AppSwitch(
+                      value: _chime,
+                      onChanged: (v) => setState(() => _chime = v)),
+                ]),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Expanded(child: Text('진동', style: AppTypography.label)),
+                  AppSwitch(
+                      value: _vibration,
+                      onChanged: (v) => setState(() => _vibration = v)),
+                ]),
               ]),
-              const SizedBox(height: 12),
-              Row(children: [
-                Expanded(child: Text('진동', style: AppTypography.label)),
-                AppSwitch(
-                    value: _vibration,
-                    onChanged: (v) => setState(() => _vibration = v)),
-              ]),
-            ]),
-          ),
-          const SizedBox(height: 24),
-          PrimaryButton(
-            label: '시작',
-            icon: AppIcons.play,
-            onPressed: _start,
-          ),
-        ],
+            ),
+            const SizedBox(height: 16),
+            Text('부위 ${_positionsInOrder.length}곳 · 약 $_lengthMin분',
+                textAlign: TextAlign.center,
+                style: AppTypography.tiny),
+            const SizedBox(height: 10),
+            PrimaryButton(label: '시작', icon: AppIcons.play, onPressed: _start),
+          ],
+        ),
       ),
     );
   }
@@ -127,7 +203,7 @@ class _ReikiSetupScreenState extends State<ReikiSetupScreen> {
           children: [
             Row(children: [
               Expanded(child: Text(label, style: AppTypography.label)),
-              Text(value, style: AppTypography.tiny),
+              Text(value, style: AppTypography.tiny.copyWith(color: _accent)),
             ]),
             Slider(value: v, min: min, max: max, onChanged: onChanged),
           ],
@@ -143,20 +219,76 @@ class _ReikiSetupScreenState extends State<ReikiSetupScreen> {
         app.presets.all.firstWhere((p) => p.category == PresetCategory.reiki);
     final draft = preset.deepCopy();
     draft.stages.first.durationSec = _lengthMin * 60;
-    // 차임은 레이키 화면의 위치 변경 타이머가 담당 → 세션 인터벌 차임은 끔(중복 방지).
-    draft.stages.first.chimeIntervalSec = 0;
+    draft.stages.first.chimeIntervalSec = 0; // 위치 타이머가 차임 담당
     await pb.prepareSession(draft);
     await pb.start();
     if (!mounted) return;
+    final positions = _positionsInOrder;
     Navigator.of(context).pushReplacement(MaterialPageRoute(
       builder: (_) => ReikiPlayScreen(
-        positions: _kind == ReikiKind.self ? _selfPositions : const ['위치'],
+        positions: positions.isEmpty ? const ['위치'] : positions,
         intervalSec: _intervalMin * 60,
         chime: _chime,
         vibration: _vibration,
         title: _reikiKindLabels[_kind]!,
       ),
     ));
+  }
+}
+
+/// 선택형 알약 버튼(그라데이션 강조).
+class _SelectPill extends StatelessWidget {
+  const _SelectPill({
+    required this.label,
+    required this.selected,
+    required this.accent,
+    required this.onTap,
+    this.dense = false,
+  });
+  final String label;
+  final bool selected;
+  final Color accent;
+  final VoidCallback onTap;
+  final bool dense;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: EdgeInsets.symmetric(
+            horizontal: dense ? 13 : 16, vertical: dense ? 8 : 11),
+        decoration: BoxDecoration(
+          gradient: selected
+              ? LinearGradient(colors: [
+                  accent.withOpacity(0.34),
+                  accent.withOpacity(0.18),
+                ])
+              : null,
+          color: selected ? null : AppColors.surface2,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(
+            color: selected ? accent.withOpacity(0.7) : AppColors.softDivider,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (selected) ...[
+              Icon(AppIcons.check, size: 14, color: accent),
+              const SizedBox(width: 6),
+            ],
+            Text(label,
+                style: AppTypography.label.copyWith(
+                    fontSize: dense ? 12 : 13,
+                    color: selected
+                        ? AppColors.textPrimary
+                        : AppColors.textSecondary)),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -180,16 +312,23 @@ class ReikiPlayScreen extends StatefulWidget {
   State<ReikiPlayScreen> createState() => _ReikiPlayScreenState();
 }
 
-class _ReikiPlayScreenState extends State<ReikiPlayScreen> {
+class _ReikiPlayScreenState extends State<ReikiPlayScreen>
+    with SingleTickerProviderStateMixin {
   int _positionIndex = 0;
   int _positionElapsed = 0;
   Timer? _ticker;
   Timer? _dimTimer;
   bool _dim = false;
+  late final AnimationController _anim;
+
+  static const _accent = ChakraColors.heart;
 
   @override
   void initState() {
     super.initState();
+    _anim = AnimationController(
+        vsync: this, duration: const Duration(seconds: 12))
+      ..repeat();
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
     _scheduleDim();
   }
@@ -215,7 +354,6 @@ class _ReikiPlayScreenState extends State<ReikiPlayScreen> {
     if (widget.vibration && app.settings.reikiVibration) {
       HapticFeedback.mediumImpact();
     }
-    // 화면이 갑자기 밝아지지 않도록 dim 유지(사용자 조작 시에만 복귀).
   }
 
   void _scheduleDim() {
@@ -233,6 +371,7 @@ class _ReikiPlayScreenState extends State<ReikiPlayScreen> {
 
   @override
   void dispose() {
+    _anim.dispose();
     _ticker?.cancel();
     _dimTimer?.cancel();
     super.dispose();
@@ -250,11 +389,10 @@ class _ReikiPlayScreenState extends State<ReikiPlayScreen> {
         .toInt();
     final posFraction =
         widget.intervalSec > 0 ? _positionElapsed / widget.intervalSec : 0.0;
-    const accent = ChakraColors.heart; // 레이키: 차분한 세이지 그린 포인트
     final width = MediaQuery.of(context).size.width.clamp(0.0, 520.0);
-    final ringSize = (width * 0.66).clamp(200.0, 320.0);
+    final ringSize = (width * 0.72).clamp(220.0, 340.0);
+    final animate = !app.settings.reduceMotion && pb.isPlaying && !_dim;
 
-    // Material 로 감싸 DefaultTextStyle 을 제공(없으면 노란 밑줄 기본 스타일이 뜸).
     return Material(
       color: _dim ? Colors.black : AppColors.deep,
       child: GestureDetector(
@@ -264,60 +402,58 @@ class _ReikiPlayScreenState extends State<ReikiPlayScreen> {
           duration: const Duration(milliseconds: 600),
           decoration: BoxDecoration(
             gradient: RadialGradient(
-              center: const Alignment(0, -0.35),
-              radius: 1.0,
+              center: const Alignment(0, -0.3),
+              radius: 1.1,
               colors: [
-                accent.withOpacity(_dim ? 0.0 : 0.10),
+                _accent.withOpacity(_dim ? 0.0 : 0.13),
                 AppColors.deep,
               ],
-              stops: const [0.0, 0.6],
+              stops: const [0.0, 0.62],
             ),
             color: _dim ? Colors.black : null,
           ),
           child: SafeArea(
             child: AnimatedOpacity(
               duration: const Duration(milliseconds: 600),
-              opacity: _dim ? 0.45 : 1.0,
+              opacity: _dim ? 0.5 : 1.0,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   children: [
                     const SizedBox(height: 18),
                     Text(widget.title.toUpperCase(),
-                        style: AppTypography.smallCaps.copyWith(
-                            letterSpacing: 2.5, color: accent)),
+                        style: AppTypography.smallCaps
+                            .copyWith(letterSpacing: 2.5, color: _accent)),
                     const Spacer(),
-                    // 중앙 공명 링 + 현재 위치
                     SizedBox(
                       width: ringSize,
                       height: ringSize,
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          if (app.settings.showResonanceViz)
-                            ResonanceVisualizer(
-                              accent: accent,
-                              active: pb.isPlaying,
-                              reduceMotion: app.settings.reduceMotion,
-                              size: ringSize,
+                          AnimatedBuilder(
+                            animation: _anim,
+                            builder: (context, _) => CustomPaint(
+                              size: Size.square(ringSize),
+                              painter: _ReikiAura(
+                                t: _anim.value,
+                                fraction: posFraction,
+                                accent: _accent,
+                                active: animate,
+                              ),
                             ),
-                          CustomPaint(
-                            size: Size.square(ringSize),
-                            painter: _PositionRing(
-                                fraction: posFraction, accent: accent),
                           ),
                           Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text('현재 위치', style: AppTypography.tiny),
+                              Text('현재 부위', style: AppTypography.tiny),
                               const SizedBox(height: 8),
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.baseline,
                                 textBaseline: TextBaseline.alphabetic,
                                 children: [
-                                  Text(
-                                      (idx + 1).toString().padLeft(2, '0'),
+                                  Text((idx + 1).toString().padLeft(2, '0'),
                                       style: AppTypography.frequencyDisplay
                                           .copyWith(fontSize: 56)),
                                   Text(' / ${count.toString().padLeft(2, '0')}',
@@ -328,40 +464,35 @@ class _ReikiPlayScreenState extends State<ReikiPlayScreen> {
                               const SizedBox(height: 4),
                               Text(area,
                                   style: AppTypography.h2
-                                      .copyWith(color: accent)),
+                                      .copyWith(color: _accent)),
                             ],
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 22),
-                    // 위치 진행 점
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         for (var i = 0; i < count; i++)
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
-                            margin:
-                                const EdgeInsets.symmetric(horizontal: 4),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
                             width: i == idx ? 22 : 8,
                             height: 8,
                             decoration: BoxDecoration(
                               color: i < idx
-                                  ? accent.withOpacity(0.5)
-                                  : (i == idx
-                                      ? accent
-                                      : AppColors.surface4),
+                                  ? _accent.withOpacity(0.5)
+                                  : (i == idx ? _accent : AppColors.surface4),
                               borderRadius: BorderRadius.circular(999),
                             ),
                           ),
                       ],
                     ),
                     const SizedBox(height: 24),
-                    // 시간 칩 두 개
                     Row(
                       children: [
-                        _timeChip('이 위치', pb.formatTime(posLeft), accent),
+                        _timeChip('이 부위', pb.formatTime(posLeft), _accent),
                         const SizedBox(width: 12),
                         _timeChip('전체 남은 시간',
                             pb.formatTime(pb.totalRemainingSec), null),
@@ -426,8 +557,7 @@ class _ReikiPlayScreenState extends State<ReikiPlayScreen> {
             const SizedBox(height: 6),
             Text(value,
                 style: AppTypography.timeDisplay.copyWith(
-                    fontSize: 24,
-                    color: accent ?? AppColors.textPrimary)),
+                    fontSize: 24, color: accent ?? AppColors.textPrimary)),
           ],
         ),
       ),
@@ -435,36 +565,111 @@ class _ReikiPlayScreenState extends State<ReikiPlayScreen> {
   }
 }
 
-/// 현재 위치 진행 링(위치 경과 비율을 호로 표시).
-class _PositionRing extends CustomPainter {
-  _PositionRing({required this.fraction, required this.accent});
+/// 레이키 중앙 시각화: 부드럽게 호흡하는 그라데이션 링 + 부위 진행 호 + 글로우 코어.
+class _ReikiAura extends CustomPainter {
+  _ReikiAura({
+    required this.t,
+    required this.fraction,
+    required this.accent,
+    required this.active,
+  });
+  final double t;
   final double fraction;
   final Color accent;
+  final bool active;
+
+  Color _lig(double x) => Color.lerp(accent, Colors.white, x)!;
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width * 0.40;
-    final bg = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..color = AppColors.surface3;
-    canvas.drawCircle(center, radius, bg);
-    final arc = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5
-      ..strokeCap = StrokeCap.round
-      ..color = accent.withOpacity(0.9);
+    final maxR = size.width / 2;
+
+    // 배경 글로우
+    canvas.drawCircle(
+        center,
+        maxR,
+        Paint()
+          ..shader = RadialGradient(colors: [
+            accent.withOpacity(0.14),
+            accent.withOpacity(0.03),
+            Colors.transparent,
+          ], stops: const [
+            0.0,
+            0.5,
+            0.85
+          ]).createShader(Rect.fromCircle(center: center, radius: maxR)));
+
+    // 호흡하는 동심원(그라데이션 스트로크 + 소프트 글로우)
+    final specs = [0.42, 0.6, 0.78, 0.94];
+    for (var i = 0; i < specs.length; i++) {
+      final breath =
+          active ? 1.0 + 0.03 * math.sin((t + i * 0.2) * 2 * math.pi) : 1.0;
+      final r = maxR * specs[i] * breath;
+      canvas.drawCircle(
+          center,
+          r,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = maxR * 0.03
+            ..color = _lig(0.1).withOpacity(0.05)
+            ..maskFilter = MaskFilter.blur(BlurStyle.normal, maxR * 0.02));
+      canvas.drawCircle(
+          center,
+          r,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.0
+            ..color = _lig(0.2).withOpacity([0.35, 0.25, 0.16, 0.09][i]));
+    }
+
+    // 부위 진행 호(글로우 + 선명)
+    final ringR = maxR * 0.6;
+    final rect = Rect.fromCircle(center: center, radius: ringR);
+    final sweep = 2 * math.pi * fraction.clamp(0.0, 1.0);
+    final shader = SweepGradient(
+      startAngle: -math.pi / 2,
+      endAngle: 3 * math.pi / 2,
+      colors: [accent.withOpacity(0.2), _lig(0.5)],
+    ).createShader(rect);
     canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -math.pi / 2,
-      2 * math.pi * fraction.clamp(0.0, 1.0),
-      false,
-      arc,
-    );
+        rect,
+        -math.pi / 2,
+        sweep,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = maxR * 0.03
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, maxR * 0.015)
+          ..shader = shader);
+    canvas.drawArc(
+        rect,
+        -math.pi / 2,
+        sweep,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = maxR * 0.012
+          ..shader = shader);
+
+    // 글로우 코어
+    canvas.drawCircle(
+        center,
+        maxR * 0.12,
+        Paint()
+          ..shader = RadialGradient(colors: [
+            _lig(0.4).withOpacity(0.18),
+            Colors.transparent,
+          ]).createShader(
+              Rect.fromCircle(center: center, radius: maxR * 0.12)));
   }
 
   @override
-  bool shouldRepaint(covariant _PositionRing old) =>
-      old.fraction != fraction || old.accent != accent;
+  bool shouldRepaint(covariant _ReikiAura old) =>
+      old.t != t ||
+      old.fraction != fraction ||
+      old.accent != accent ||
+      old.active != active;
 }

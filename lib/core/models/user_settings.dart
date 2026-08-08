@@ -7,6 +7,7 @@ class UserSettings {
   int endFadeSec;
   bool pauseOnHeadphoneUnplug;
   bool autoStopAfterComplete;
+  bool backgroundPlayback; // 앱을 벗어나도(화면 끔·다른 앱) 계속 재생
   // 오디오
   int initialMasterVolumePercent; // 최초 시작 음량(낮게)
   int chimeVolumePercent;
@@ -36,6 +37,7 @@ class UserSettings {
     this.endFadeSec = 10,
     this.pauseOnHeadphoneUnplug = true,
     this.autoStopAfterComplete = true,
+    this.backgroundPlayback = true,
     this.initialMasterVolumePercent = 15,
     this.chimeVolumePercent = 70,
     this.binauralInvert = false,
@@ -63,6 +65,7 @@ class UserSettings {
         pauseOnHeadphoneUnplug:
             j['pauseOnHeadphoneUnplug'] as bool? ?? true,
         autoStopAfterComplete: j['autoStopAfterComplete'] as bool? ?? true,
+        backgroundPlayback: j['backgroundPlayback'] as bool? ?? true,
         initialMasterVolumePercent:
             (j['initialMasterVolumePercent'] as num?)?.toInt() ?? 15,
         chimeVolumePercent: (j['chimeVolumePercent'] as num?)?.toInt() ?? 70,
@@ -92,6 +95,7 @@ class UserSettings {
         'endFadeSec': endFadeSec,
         'pauseOnHeadphoneUnplug': pauseOnHeadphoneUnplug,
         'autoStopAfterComplete': autoStopAfterComplete,
+        'backgroundPlayback': backgroundPlayback,
         'initialMasterVolumePercent': initialMasterVolumePercent,
         'chimeVolumePercent': chimeVolumePercent,
         'binauralInvert': binauralInvert,
