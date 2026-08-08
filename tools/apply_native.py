@@ -86,15 +86,16 @@ def apply_android():
         with open(root_kts, "r", encoding="utf-8") as f:
             rg = f.read()
         if "FORCE_PLUGIN_COMPILE_SDK" not in rg:
+            # 서브프로젝트가 이미 평가됐으면 즉시, 아니면 afterEvaluate 로 지정.
+            # (루트 gradle 의 evaluationDependsOn(":app") 이 조기 평가시키므로 방어.)
             block = (
                 "// FORCE_PLUGIN_COMPILE_SDK — 최신 플러그인 compileSdk 36 요구 대응.\n"
                 "subprojects {\n"
-                "    afterEvaluate {\n"
+                "    fun setSdk() {\n"
                 "        val ext = extensions.findByName(\"android\")\n"
-                "        if (ext is com.android.build.gradle.BaseExtension) {\n"
-                "            ext.compileSdkVersion(36)\n"
-                "        }\n"
+                "        if (ext is com.android.build.gradle.BaseExtension) ext.compileSdkVersion(36)\n"
                 "    }\n"
+                "    if (state.executed) setSdk() else afterEvaluate { setSdk() }\n"
                 "}\n\n"
             )
             with open(root_kts, "w", encoding="utf-8") as f:
