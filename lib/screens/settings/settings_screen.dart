@@ -15,6 +15,7 @@ import '../../core/state/app_state.dart';
 import '../../widgets/common.dart';
 import '../../widgets/dialogs.dart';
 import '../../widgets/page_scaffold.dart';
+import '../tools/self_check_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -87,6 +88,15 @@ class SettingsScreen extends StatelessWidget {
               (v) { s.largeText = v; save(); }),
           _switchRow('현재 주파수 소수점 표시', null, s.showFrequencyDecimals,
               (v) { s.showFrequencyDecimals = v; save(); }),
+          _switchRow('호흡 가이드', '재생 중 들숨·날숨 리듬 안내', s.breathingGuide,
+              (v) { s.breathingGuide = v; save(); }),
+        ]),
+        _group('도구', [
+          _actionRow(context, '주파수 자가 진단', '이 기기에서 생성 주파수 정확도 측정',
+              () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const SelfCheckScreen()))),
+          _actionRow(context, '온보딩 다시 보기', '앱 첫 소개 화면을 다시 표시',
+              () { s.onboardingDone = false; save(); }),
         ]),
         _group('데이터', [
           _actionRow(context, '프리셋 백업', 'JSON 파일로 내보내기',

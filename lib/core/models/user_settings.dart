@@ -25,6 +25,7 @@ class UserSettings {
   bool showResonanceViz;
   bool largeText;
   bool showFrequencyDecimals;
+  bool breathingGuide; // 재생 중 호흡 가이드 표시
   // 온보딩
   bool onboardingDone;
 
@@ -50,6 +51,7 @@ class UserSettings {
     this.showResonanceViz = true,
     this.largeText = false,
     this.showFrequencyDecimals = true,
+    this.breathingGuide = false,
     this.onboardingDone = false,
   });
 
@@ -79,6 +81,7 @@ class UserSettings {
         showResonanceViz: j['showResonanceViz'] as bool? ?? true,
         largeText: j['largeText'] as bool? ?? false,
         showFrequencyDecimals: j['showFrequencyDecimals'] as bool? ?? true,
+        breathingGuide: j['breathingGuide'] as bool? ?? false,
         onboardingDone: j['onboardingDone'] as bool? ?? false,
       );
 
@@ -104,6 +107,7 @@ class UserSettings {
         'showResonanceViz': showResonanceViz,
         'largeText': largeText,
         'showFrequencyDecimals': showFrequencyDecimals,
+        'breathingGuide': breathingGuide,
         'onboardingDone': onboardingDone,
       };
 }

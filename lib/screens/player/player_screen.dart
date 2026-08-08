@@ -9,6 +9,7 @@ import '../../core/models/preset.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/playback_controller.dart';
 import '../../widgets/app_icons.dart';
+import '../../widgets/breathing_guide.dart';
 import '../../widgets/common.dart';
 import '../../widgets/dialogs.dart';
 import '../../widgets/dreamy_background.dart';
@@ -90,8 +91,20 @@ class PlayerScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _topBar(context, pb, session),
+                if (pb.hearingNudgeActive) ...[
+                  const SizedBox(height: 12),
+                  _hearingBanner(context, pb),
+                ],
                 const SizedBox(height: 20),
                 _resonance(context, app, pb, accent, freq, session),
+                if (app.settings.breathingGuide) ...[
+                  const SizedBox(height: 16),
+                  BreathingGuide(
+                    accent: accent,
+                    active: pb.isPlaying,
+                    reduceMotion: app.settings.reduceMotion,
+                  ),
+                ],
                 const SizedBox(height: 24),
                 _timeBlock(pb),
                 const SizedBox(height: 16),
@@ -101,6 +114,10 @@ class PlayerScreen extends StatelessWidget {
                 _transport(pb, accent),
                 const SizedBox(height: 24),
                 _masterVolume(pb),
+                const SizedBox(height: 12),
+                _sleepTimer(context, pb, accent),
+                const SizedBox(height: 12),
+                _breathingToggle(context, app),
                 const SizedBox(height: 14),
                 SectionHeader('현재 사운드',
                     action: '편집', onAction: () {}),
@@ -122,6 +139,9 @@ class PlayerScreen extends StatelessWidget {
 
   Widget _topBar(
       BuildContext context, PlaybackController pb, Preset session) {
+    final app = context.watch<AppState>();
+    final favId = pb.sourcePreset?.id;
+    final isFav = favId != null && app.presets.isFavorite(favId);
     return Row(
       children: [
         IconChipButton(
@@ -141,6 +161,20 @@ class PlayerScreen extends StatelessWidget {
             ],
           ),
         ),
+        if (favId != null)
+          IconChipButton(
+            icon: isFav ? AppIcons.favoriteFilled : AppIcons.favorite,
+            tooltip: isFav ? '즐겨찾기 해제' : '즐겨찾기',
+            color: isFav ? AppColors.accent : null,
+            onTap: () async {
+              await app.presets.toggleFavorite(favId);
+              app.refresh();
+              if (context.mounted) {
+                showToast(context, isFav ? '즐겨찾기에서 제거했어요' : '즐겨찾기에 추가했어요');
+              }
+            },
+          ),
+        const SizedBox(width: 8),
         _MoreMenu(pb: pb),
       ],
     );
@@ -275,6 +309,122 @@ class PlayerScreen extends StatelessWidget {
               : const SizedBox.shrink(),
         ),
       ],
+    );
+  }
+
+  Widget _hearingBanner(BuildContext context, PlaybackController pb) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(AppRadius.medium),
+        border: Border.all(color: AppColors.warning.withOpacity(0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.volume_up_outlined,
+              color: AppColors.warning, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text('한 시간 넘게 듣고 있어요. 잠깐 쉬거나 음량을 낮춰보세요.',
+                style: AppTypography.tiny),
+          ),
+          TextButton(
+            onPressed: pb.dismissHearingNudge,
+            child: Text('확인', style: AppTypography.label),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sleepTimer(BuildContext context, PlaybackController pb, Color accent) {
+    const options = [0, 15, 30, 45, 60];
+    final active = pb.sleepRemainingSec > 0;
+    return SurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(AppIcons.timer, size: 16, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
+              const Expanded(child: Eyebrow('SLEEP TIMER')),
+              Text(
+                active ? pb.formatTime(pb.sleepRemainingSec) : '꺼짐',
+                style: AppTypography.tiny
+                    .copyWith(color: active ? accent : AppColors.textMuted),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            children: [
+              for (final m in options)
+                _sleepChip(
+                  label: m == 0 ? '꺼짐' : '$m분',
+                  selected: m == 0 ? !active : pb.sleepTimerSetMinutes == m,
+                  accent: accent,
+                  onTap: () {
+                    pb.setSleepTimerMinutes(m);
+                    showToast(context,
+                        m == 0 ? '수면 타이머를 껐어요' : '$m분 뒤 부드럽게 종료돼요');
+                  },
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text('설정한 시간이 지나면 소리가 서서히 사라지며 종료됩니다 · 틀어놓고 잠들 때 좋아요',
+              style: AppTypography.tiny.copyWith(fontSize: 10)),
+        ],
+      ),
+    );
+  }
+
+  Widget _sleepChip({
+    required String label,
+    required bool selected,
+    required Color accent,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? accent.withOpacity(0.22) : AppColors.surface3,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(
+              color: selected ? accent.withOpacity(0.6) : AppColors.softDivider),
+        ),
+        child: Text(label,
+            style: AppTypography.tiny.copyWith(
+                color: selected ? AppColors.textPrimary : AppColors.textSecondary)),
+      ),
+    );
+  }
+
+  Widget _breathingToggle(BuildContext context, AppState app) {
+    final on = app.settings.breathingGuide;
+    return GestureDetector(
+      onTap: () {
+        final s = app.settings;
+        s.breathingGuide = !s.breathingGuide;
+        app.updateSettings(s);
+      },
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(on ? Icons.air_rounded : Icons.air_outlined,
+              size: 16,
+              color: on ? AppColors.accent : AppColors.textMuted),
+          const SizedBox(width: 8),
+          Text(on ? '호흡 가이드 켜짐 · 끄기' : '호흡 가이드 켜기',
+              style: AppTypography.tiny.copyWith(
+                  color: on ? AppColors.accent : AppColors.textSecondary)),
+        ],
+      ),
     );
   }
 

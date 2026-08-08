@@ -20,15 +20,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   static const _pages = [
     (
       '주파수와 사운드를 조합합니다',
-      '앱이 주파수와 드론을 실시간으로 생성하고\n자연음, 패드, 차임을 함께 재생합니다.'
+      '앱이 주파수와 드론을 실시간으로 생성하고\n자연음, 패드, 차임을 함께 재생합니다.\n효과는 상징적이며, 의료용이 아닙니다.'
+    ),
+    (
+      '바이노럴은 이어폰을 끼세요',
+      '수면·집중·이완 같은 바이노럴 세션은\n좌우 귀에 다른 주파수를 보내므로 이어폰이 필요합니다.\n차크라·기본 세션은 스피커로도 괜찮아요.'
     ),
     (
       '처음에는 낮은 음량으로 시작하세요',
-      '출력 기기마다 실제 소리의 크기가 다를 수 있습니다.\n두통·이명·어지럼이 생기면 사용을 멈추세요.'
+      '출력 기기마다 실제 소리의 크기가 다를 수 있습니다.\n오래·크게 듣지 마시고, 두통·이명·어지럼이 생기면\n사용을 멈추세요.'
     ),
     (
       '나만의 세션을 저장하세요',
-      '모든 설정과 기록은 이 기기에만 저장됩니다.\n서버도 계정도 없습니다.'
+      '모든 설정과 기록은 이 기기에만 저장됩니다.\n서버도, 계정도, 광고도 없습니다.'
     ),
   ];
 
@@ -46,6 +50,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            // 건너뛰기: 온보딩을 보지 않고 바로 시작.
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 6, right: 8),
+                child: TextButton(
+                  onPressed: () =>
+                      context.read<AppState>().completeOnboarding(),
+                  child: Text('건너뛰기',
+                      style: AppTypography.label
+                          .copyWith(color: AppColors.textSecondary)),
+                ),
+              ),
+            ),
             Expanded(
               child: PageView.builder(
                 controller: _controller,

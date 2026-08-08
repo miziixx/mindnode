@@ -73,12 +73,44 @@ def render_master(size=1024):
     return base.resize((size, size), Image.LANCZOS).convert("RGB")
 
 
+# 적응형 아이콘 배경색(단색). res/values 에 색으로 기록.
+ADAPTIVE_BG = (15, 16, 23)  # #0F1017
+
+
+def render_foreground(size=432):
+    """Android 적응형 아이콘 전경(투명 배경 + 파형). 안전영역(중앙 66%) 안에 배치."""
+    S = size * SS
+    cx = cy = S / 2
+    layer = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    dr = ImageDraw.Draw(layer)
+    # 안전영역 고려: 막대를 중앙 ~56% 폭 안에 배치(바깥 18%는 런처가 잘라냄).
+    n = 15
+    span = S * 0.50
+    x0 = cx - span / 2
+    gap = span / n
+    bw = gap * 0.5
+    for i in range(n):
+        u = (i + 0.5) / n
+        env = math.sin(u * math.pi) ** 0.7
+        h = S * 0.155 * (0.3 + 0.7 * env)
+        x = x0 + gap * i + gap * 0.5
+        col = _irid(0.12 + u * 0.72)
+        dr.rounded_rectangle([x - bw / 2, cy - h, x + bw / 2, cy + h],
+                             radius=bw / 2, fill=col + (255,))
+    out = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    g = layer.filter(ImageFilter.GaussianBlur(radius=S * 0.02))
+    for _ in range(2):
+        out.alpha_composite(g)
+    out.alpha_composite(layer)
+    return out.resize((size, size), Image.LANCZOS)
+
+
 def main():
     master = render_master(1024)
     master.save(os.path.join(OUT, "app_icon_preview.png"))
     master.save(os.path.join(OUT, "app_icon_1024.png"))
 
-    # Android mipmap
+    # Android mipmap(레거시 < API 26)
     android = {"mdpi": 48, "hdpi": 72, "xhdpi": 96, "xxhdpi": 144, "xxxhdpi": 192}
     for dpi, px in android.items():
         d = os.path.join(OUT, "android", f"mipmap-{dpi}")
@@ -86,6 +118,16 @@ def main():
         img = master.resize((px, px), Image.LANCZOS)
         img.save(os.path.join(d, "ic_launcher.png"))
         img.save(os.path.join(d, "ic_launcher_round.png"))
+
+    # Android 적응형 아이콘 전경(API 26+). 전경 108dp 기준 밀도별 크기.
+    fg_master = render_foreground(432)
+    adaptive_px = {"mdpi": 108, "hdpi": 162, "xhdpi": 216,
+                   "xxhdpi": 324, "xxxhdpi": 432}
+    for dpi, px in adaptive_px.items():
+        d = os.path.join(OUT, "android", f"mipmap-{dpi}")
+        os.makedirs(d, exist_ok=True)
+        fg_master.resize((px, px), Image.LANCZOS).save(
+            os.path.join(d, "ic_launcher_foreground.png"))
 
     # iOS AppIcon.appiconset (완전 교체)
     ios = os.path.join(OUT, "ios", "AppIcon.appiconset")

@@ -53,6 +53,16 @@ class PlaybackController extends ChangeNotifier {
   bool engineReady = false;
   DateTime? _sessionStartedAt;
 
+  // 수면 타이머(0 = 꺼짐). 남은 시간이 0에 도달하면 부드럽게 종료.
+  int sleepRemainingSec = 0;
+  int sleepTimerSetMinutes = 0; // UI 선택 표시용(원래 설정값)
+  // 청력 배려: 큰 음량으로 오래 들으면 1회 안내.
+  int _playingElapsedSec = 0;
+  bool _hearingNudged = false;
+  bool hearingNudgeActive = false;
+  static const int _hearingNudgeAfterSec = 3600; // 60분
+  static const double _hearingNudgeVolume = 0.5; // 50% 이상
+
   Preset? get session => _session;
   Preset? get sourcePreset => _sourcePreset;
 
@@ -102,6 +112,11 @@ class PlaybackController extends ChangeNotifier {
     sessionModified = false;
     currentStageIndex = 0;
     _stageElapsedSec = 0;
+    _playingElapsedSec = 0;
+    sleepRemainingSec = 0;
+    sleepTimerSetMinutes = 0;
+    _hearingNudged = false;
+    hearingNudgeActive = false;
     totalDurationSec = _session!.totalDurationSec;
     totalRemainingSec = totalDurationSec;
     progressFraction = 0;
@@ -202,6 +217,19 @@ class PlaybackController extends ChangeNotifier {
   Future<void> setMasterVolume(double v01) async {
     masterVolume01 = v01.clamp(0.0, 1.0);
     await engine.setMasterGain(masterVolume01);
+    notifyListeners();
+  }
+
+  /// 수면 타이머 설정(분). 0이면 끔. 재생 중 카운트다운, 0에서 부드럽게 종료.
+  void setSleepTimerMinutes(int minutes) {
+    sleepTimerSetMinutes = minutes <= 0 ? 0 : minutes;
+    sleepRemainingSec = minutes <= 0 ? 0 : minutes * 60;
+    notifyListeners();
+  }
+
+  /// 청력 안내 배너 닫기.
+  void dismissHearingNudge() {
+    hearingNudgeActive = false;
     notifyListeners();
   }
 
@@ -422,6 +450,24 @@ class PlaybackController extends ChangeNotifier {
       if (state != PlaybackState.playing) return;
       final st = currentStage;
       if (st == null) return;
+
+      // 수면 타이머(프리셋 길이와 무관하게 우선 종료).
+      if (sleepRemainingSec > 0) {
+        sleepRemainingSec--;
+        if (sleepRemainingSec <= 0) {
+          _completeByTimer();
+          return;
+        }
+      }
+      // 청력 배려: 큰 음량 장시간 재생 시 1회 안내.
+      _playingElapsedSec++;
+      if (!_hearingNudged &&
+          _playingElapsedSec >= _hearingNudgeAfterSec &&
+          masterVolume01 >= _hearingNudgeVolume) {
+        _hearingNudged = true;
+        hearingNudgeActive = true;
+      }
+
       _stageElapsedSec++;
       if (totalRemainingSec > 0) totalRemainingSec--;
       if (totalDurationSec > 0) {
@@ -495,6 +541,11 @@ class PlaybackController extends ChangeNotifier {
     // 카운터 초기화 — 다음에 다른 프리셋을 틀면 그 프리셋 시간에서 시작하도록.
     currentStageIndex = 0;
     _stageElapsedSec = 0;
+    _playingElapsedSec = 0;
+    sleepRemainingSec = 0;
+    sleepTimerSetMinutes = 0;
+    _hearingNudged = false;
+    hearingNudgeActive = false;
     totalRemainingSec = 0;
     totalDurationSec = 0;
     progressFraction = 0;

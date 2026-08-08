@@ -55,16 +55,55 @@ def apply_android():
         f.write(xml)
     print("patched AndroidManifest.xml (permissions + PlaybackService)")
 
-    # 앱 아이콘(생성된 mipmap 덮어쓰기)
+    # 앱 아이콘(생성된 mipmap 덮어쓰기 + 적응형 아이콘)
     icon_src = os.path.join(ROOT, "assets", "launcher_icons", "android")
     res = os.path.join(ROOT, "android", "app", "src", "main", "res")
     if os.path.isdir(icon_src):
         for dpi in ("mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"):
-            src = os.path.join(icon_src, f"mipmap-{dpi}", "ic_launcher.png")
+            srcdir = os.path.join(icon_src, f"mipmap-{dpi}")
             dstdir = os.path.join(res, f"mipmap-{dpi}")
-            if os.path.exists(src) and os.path.isdir(dstdir):
-                shutil.copy(src, os.path.join(dstdir, "ic_launcher.png"))
-        print("overwrote Android launcher icons (mipmap-*)")
+            os.makedirs(dstdir, exist_ok=True)
+            # 레거시 아이콘(< API 26)
+            leg = os.path.join(srcdir, "ic_launcher.png")
+            if os.path.exists(leg):
+                shutil.copy(leg, os.path.join(dstdir, "ic_launcher.png"))
+                shutil.copy(leg, os.path.join(dstdir, "ic_launcher_round.png"))
+            # 적응형 전경(API 26+)
+            fg = os.path.join(srcdir, "ic_launcher_foreground.png")
+            if os.path.exists(fg):
+                shutil.copy(fg, os.path.join(dstdir, "ic_launcher_foreground.png"))
+        print("overwrote Android launcher icons (mipmap-* + adaptive foreground)")
+
+        # 적응형 아이콘 XML(mipmap-anydpi-v26) + 배경색.
+        anydpi = os.path.join(res, "mipmap-anydpi-v26")
+        os.makedirs(anydpi, exist_ok=True)
+        adaptive_xml = (
+            '<?xml version="1.0" encoding="utf-8"?>\n'
+            '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n'
+            '    <background android:drawable="@color/ic_launcher_background"/>\n'
+            '    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>\n'
+            '</adaptive-icon>\n'
+        )
+        for name in ("ic_launcher.xml", "ic_launcher_round.xml"):
+            with open(os.path.join(anydpi, name), "w", encoding="utf-8") as f:
+                f.write(adaptive_xml)
+        # 배경색 리소스(#0F1017, generate_app_icon.ADAPTIVE_BG 와 동일)
+        values = os.path.join(res, "values")
+        os.makedirs(values, exist_ok=True)
+        colors = os.path.join(values, "colors.xml")
+        color_line = '    <color name="ic_launcher_background">#0F1017</color>\n'
+        if os.path.exists(colors):
+            with open(colors, "r", encoding="utf-8") as f:
+                cx = f.read()
+            if "ic_launcher_background" not in cx:
+                cx = cx.replace("</resources>", color_line + "</resources>")
+                with open(colors, "w", encoding="utf-8") as f:
+                    f.write(cx)
+        else:
+            with open(colors, "w", encoding="utf-8") as f:
+                f.write('<?xml version="1.0" encoding="utf-8"?>\n<resources>\n'
+                        + color_line + '</resources>\n')
+        print("wrote adaptive-icon XML + background color")
 
 
 def apply_ios():
