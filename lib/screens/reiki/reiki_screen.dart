@@ -12,6 +12,7 @@ import '../../core/models/preset.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/playback_controller.dart';
 import '../../widgets/app_icons.dart';
+import '../../widgets/breathing_guide.dart';
 import '../../widgets/common.dart';
 import '../../widgets/dreamy_background.dart';
 
@@ -54,6 +55,8 @@ class _ReikiSetupScreenState extends State<ReikiSetupScreen> {
   int _intervalMin = 5;
   bool _chime = true;
   bool _vibration = true;
+  bool _meditationOn = true; // 시작 명상
+  int _meditationMin = 3;
   late Set<String> _enabled; // 선택된 부위
 
   static const _accent = ChakraColors.heart;
@@ -175,6 +178,47 @@ class _ReikiSetupScreenState extends State<ReikiSetupScreen> {
                 (v) => setState(() => _lengthMin = v.round())),
             _sliderCard('부위 변경 간격', '$_intervalMin분마다', _intervalMin.toDouble(),
                 1, 10, (v) => setState(() => _intervalMin = v.round())),
+            // 시작 명상(호흡 고르기) — 켜고 끌 수 있고 시간 조절 가능.
+            SurfaceCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('시작 명상', style: AppTypography.label),
+                          const SizedBox(height: 2),
+                          Text('부위 진행 전에 호흡을 고르는 시간',
+                              style: AppTypography.tiny.copyWith(fontSize: 10)),
+                        ],
+                      ),
+                    ),
+                    AppSwitch(
+                        value: _meditationOn,
+                        onChanged: (v) => setState(() => _meditationOn = v)),
+                  ]),
+                  if (_meditationOn) ...[
+                    const SizedBox(height: 8),
+                    Row(children: [
+                      Expanded(
+                          child: Text('명상 시간', style: AppTypography.label)),
+                      Text('$_meditationMin분',
+                          style: AppTypography.tiny.copyWith(color: _accent)),
+                    ]),
+                    Slider(
+                      value: _meditationMin.toDouble(),
+                      min: 1,
+                      max: 15,
+                      onChanged: (v) =>
+                          setState(() => _meditationMin = v.round()),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
             SurfaceCard(
               child: Column(children: [
                 Row(children: [
@@ -193,7 +237,8 @@ class _ReikiSetupScreenState extends State<ReikiSetupScreen> {
               ]),
             ),
             const SizedBox(height: 16),
-            Text('부위 ${_positionsInOrder.length}곳 · 약 $_lengthMin분',
+            Text(
+                '${_meditationOn ? "명상 $_meditationMin분 · " : ""}부위 ${_positionsInOrder.length}곳 · 약 ${_lengthMin + (_meditationOn ? _meditationMin : 0)}분',
                 textAlign: TextAlign.center,
                 style: AppTypography.tiny),
             const SizedBox(height: 10),
@@ -230,8 +275,10 @@ class _ReikiSetupScreenState extends State<ReikiSetupScreen> {
     final pb = context.read<PlaybackController>();
     final preset = app.presets.byId('reiki_self') ??
         app.presets.all.firstWhere((p) => p.category == PresetCategory.reiki);
+    final medSec = _meditationOn ? _meditationMin * 60 : 0;
     final draft = preset.deepCopy();
-    draft.stages.first.durationSec = _lengthMin * 60;
+    // 시작 명상 시간을 세션 길이에 더해 오디오가 전체 동안 유지되도록.
+    draft.stages.first.durationSec = _lengthMin * 60 + medSec;
     draft.stages.first.chimeIntervalSec = 0; // 위치 타이머가 차임 담당
     await pb.prepareSession(draft);
     await pb.start();
@@ -241,6 +288,7 @@ class _ReikiSetupScreenState extends State<ReikiSetupScreen> {
       builder: (_) => ReikiPlayScreen(
         positions: positions.isEmpty ? const ['위치'] : positions,
         intervalSec: _intervalMin * 60,
+        meditationSec: medSec,
         chime: _chime,
         vibration: _vibration,
         title: _reikiKindLabels[_kind]!,
@@ -311,12 +359,14 @@ class ReikiPlayScreen extends StatefulWidget {
     super.key,
     required this.positions,
     required this.intervalSec,
+    required this.meditationSec,
     required this.chime,
     required this.vibration,
     required this.title,
   });
   final List<String> positions;
   final int intervalSec;
+  final int meditationSec;
   final bool chime;
   final bool vibration;
   final String title;
@@ -332,6 +382,8 @@ class _ReikiPlayScreenState extends State<ReikiPlayScreen>
   Timer? _ticker;
   Timer? _dimTimer;
   bool _dim = false;
+  late bool _meditation; // 시작 명상 단계 여부
+  late int _meditationLeft;
   late final AnimationController _anim;
 
   static const _accent = ChakraColors.heart;
@@ -339,6 +391,8 @@ class _ReikiPlayScreenState extends State<ReikiPlayScreen>
   @override
   void initState() {
     super.initState();
+    _meditation = widget.meditationSec > 0;
+    _meditationLeft = widget.meditationSec;
     _anim = AnimationController(
         vsync: this, duration: const Duration(seconds: 12))
       ..repeat();
@@ -350,6 +404,11 @@ class _ReikiPlayScreenState extends State<ReikiPlayScreen>
     final pb = context.read<PlaybackController>();
     if (!pb.isPlaying) return;
     setState(() {
+      if (_meditation) {
+        _meditationLeft--;
+        if (_meditationLeft <= 0) _endMeditation();
+        return;
+      }
       _positionElapsed++;
       if (_positionElapsed >= widget.intervalSec &&
           _positionIndex < widget.positions.length - 1) {
@@ -358,6 +417,19 @@ class _ReikiPlayScreenState extends State<ReikiPlayScreen>
         _onPositionChange();
       }
     });
+  }
+
+  /// 명상 종료 → 첫 부위로 전환(차임/진동으로 알림).
+  void _endMeditation() {
+    _meditation = false;
+    _meditationLeft = 0;
+    _positionIndex = 0;
+    _positionElapsed = 0;
+    _onPositionChange();
+  }
+
+  void _skipMeditation() {
+    setState(_endMeditation);
   }
 
   void _onPositionChange() {
@@ -402,6 +474,11 @@ class _ReikiPlayScreenState extends State<ReikiPlayScreen>
         .toInt();
     final posFraction =
         widget.intervalSec > 0 ? _positionElapsed / widget.intervalSec : 0.0;
+    final auraFraction = _meditation
+        ? (widget.meditationSec > 0
+            ? 1.0 - _meditationLeft / widget.meditationSec
+            : 0.0)
+        : posFraction;
     final width = MediaQuery.of(context).size.width.clamp(0.0, 520.0);
     final ringSize = (width * 0.72).clamp(220.0, 340.0);
     final animate = !app.settings.reduceMotion && pb.isPlaying && !_dim;
@@ -450,62 +527,94 @@ class _ReikiPlayScreenState extends State<ReikiPlayScreen>
                               size: Size.square(ringSize),
                               painter: _ReikiAura(
                                 t: _anim.value,
-                                fraction: posFraction,
+                                fraction: auraFraction,
                                 accent: _accent,
                                 active: animate,
                               ),
                             ),
                           ),
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('현재 부위', style: AppTypography.tiny),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
-                                children: [
-                                  Text((idx + 1).toString().padLeft(2, '0'),
-                                      style: AppTypography.frequencyDisplay
-                                          .copyWith(fontSize: 56)),
-                                  Text(' / ${count.toString().padLeft(2, '0')}',
-                                      style: AppTypography.h3.copyWith(
-                                          color: AppColors.textMuted)),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(area,
-                                  style: AppTypography.h2
-                                      .copyWith(color: _accent)),
-                            ],
-                          ),
+                          if (_meditation)
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('시작 명상',
+                                    style: AppTypography.smallCaps.copyWith(
+                                        letterSpacing: 2, color: _accent)),
+                                const SizedBox(height: 14),
+                                BreathingGuide(
+                                  accent: _accent,
+                                  active: animate,
+                                  reduceMotion: app.settings.reduceMotion,
+                                ),
+                                const SizedBox(height: 14),
+                                Text(pb.formatTime(_meditationLeft),
+                                    style: AppTypography.timeDisplay
+                                        .copyWith(fontSize: 30)),
+                              ],
+                            )
+                          else
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('현재 부위', style: AppTypography.tiny),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.baseline,
+                                  textBaseline: TextBaseline.alphabetic,
+                                  children: [
+                                    Text((idx + 1).toString().padLeft(2, '0'),
+                                        style: AppTypography.frequencyDisplay
+                                            .copyWith(fontSize: 56)),
+                                    Text(
+                                        ' / ${count.toString().padLeft(2, '0')}',
+                                        style: AppTypography.h3.copyWith(
+                                            color: AppColors.textMuted)),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(area,
+                                    style: AppTypography.h2
+                                        .copyWith(color: _accent)),
+                              ],
+                            ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 22),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        for (var i = 0; i < count; i++)
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: i == idx ? 22 : 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: i < idx
-                                  ? _accent.withOpacity(0.5)
-                                  : (i == idx ? _accent : AppColors.surface4),
-                              borderRadius: BorderRadius.circular(999),
+                    if (_meditation)
+                      Text('호흡을 고르고 준비되면 시작하세요',
+                          style: AppTypography.tiny)
+                    else
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          for (var i = 0; i < count; i++)
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                              width: i == idx ? 22 : 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: i < idx
+                                    ? _accent.withOpacity(0.5)
+                                    : (i == idx
+                                        ? _accent
+                                        : AppColors.surface4),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
                             ),
-                          ),
-                      ],
-                    ),
+                        ],
+                      ),
                     const SizedBox(height: 24),
                     Row(
                       children: [
-                        _timeChip('이 부위', pb.formatTime(posLeft), _accent),
+                        _timeChip(
+                            _meditation ? '명상 남은 시간' : '이 부위',
+                            pb.formatTime(_meditation ? _meditationLeft : posLeft),
+                            _accent),
                         const SizedBox(width: 12),
                         _timeChip('전체 남은 시간',
                             pb.formatTime(pb.totalRemainingSec), null),
@@ -517,29 +626,42 @@ class _ReikiPlayScreenState extends State<ReikiPlayScreen>
                       child: _dim
                           ? Text('화면을 탭하면 밝아집니다',
                               style: AppTypography.tiny)
-                          : Row(
+                          : Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Expanded(
-                                  child: SecondaryButton(
-                                    label: pb.isPlaying ? '일시정지' : '재개',
-                                    icon: pb.isPlaying
-                                        ? AppIcons.pause
-                                        : AppIcons.play,
-                                    onPressed: pb.togglePlayPause,
+                                if (_meditation) ...[
+                                  PrimaryButton(
+                                    label: '부위 바로 시작',
+                                    icon: AppIcons.play,
+                                    onPressed: _skipMeditation,
                                   ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: SecondaryButton(
-                                    label: '종료',
-                                    danger: true,
-                                    onPressed: () async {
-                                      await pb.stopGraceful();
-                                      if (context.mounted) {
-                                        Navigator.pop(context);
-                                      }
-                                    },
-                                  ),
+                                  const SizedBox(height: 12),
+                                ],
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: SecondaryButton(
+                                        label: pb.isPlaying ? '일시정지' : '재개',
+                                        icon: pb.isPlaying
+                                            ? AppIcons.pause
+                                            : AppIcons.play,
+                                        onPressed: pb.togglePlayPause,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: SecondaryButton(
+                                        label: '종료',
+                                        danger: true,
+                                        onPressed: () async {
+                                          await pb.stopGraceful();
+                                          if (context.mounted) {
+                                            Navigator.pop(context);
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),

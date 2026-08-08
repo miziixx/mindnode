@@ -59,7 +59,7 @@ class _SelfCheckScreenState extends State<SelfCheckScreen> {
   void _measureProbe() {
     final buf = renderTone(_probeHz, _sr, 4096);
     final m = measureDominantHz(buf, _sr,
-        lo: (_probeHz - 90).clamp(20, 2000), hi: _probeHz + 90);
+        lo: (_probeHz - 90).clamp(20.0, 2000.0), hi: _probeHz + 90);
     setState(() => _measuredHz = m);
   }
 
