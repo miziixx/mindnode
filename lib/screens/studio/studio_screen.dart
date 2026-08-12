@@ -14,6 +14,13 @@ import '../../widgets/page_scaffold.dart';
 import '../player/player_screen.dart';
 import 'studio_layer_editor.dart';
 
+/// 스튜디오 에디터를 라우트로 연다(없으면 새 사운드부터 시작).
+Future<void> openStudioEditor(BuildContext context, {Preset? source}) {
+  return Navigator.of(context).push(
+    MaterialPageRoute(builder: (_) => StudioScreen(source: source)),
+  );
+}
+
 /// 만들기 · 사운드 스튜디오. 드래프트 프리셋을 편집한다.
 class StudioScreen extends StatefulWidget {
   const StudioScreen({super.key, this.source});
@@ -57,7 +64,14 @@ class _StudioScreenState extends State<StudioScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return PageScaffold(
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: PageScaffold(
+      leading: IconChipButton(
+        icon: AppIcons.back,
+        tooltip: '뒤로',
+        onTap: () => Navigator.of(context).maybePop(),
+      ),
       eyebrow: 'Sound studio',
       title: _draft.title,
       trailing: IconChipButton(
@@ -83,6 +97,7 @@ class _StudioScreenState extends State<StudioScreen> {
         const SizedBox(height: 10),
         SecondaryButton(label: '프리셋 저장', icon: AppIcons.save, onPressed: _save),
       ],
+      ),
     );
   }
 
@@ -459,7 +474,10 @@ class _StudioScreenState extends State<StudioScreen> {
       } else if (choice == 'session') {
         if (mounted) openPresetInPlayer(context, _draft);
         return;
-      } else if (choice != 'new') {
+      } else if (choice == 'new') {
+        // 기본 프리셋을 시작점으로 삼아 새로 저장할 때 id가 겹치지 않게 새 id 부여.
+        _draft.id = 'user_${DateTime.now().millisecondsSinceEpoch}';
+      } else {
         return;
       }
     }

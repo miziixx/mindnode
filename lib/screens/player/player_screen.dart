@@ -116,6 +116,10 @@ class PlayerScreen extends StatelessWidget {
                 const SizedBox(height: 24),
                 _masterVolume(pb),
                 const SizedBox(height: 12),
+                if (pb.canAdjustDuration) ...[
+                  _durationCard(context, pb, accent),
+                  const SizedBox(height: 12),
+                ],
                 _sleepTimer(context, pb, accent),
                 const SizedBox(height: 12),
                 _breathingToggle(context, app),
@@ -334,6 +338,49 @@ class PlayerScreen extends StatelessWidget {
             onPressed: pb.dismissHearingNudge,
             child: Text('확인', style: AppTypography.label),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _durationCard(
+      BuildContext context, PlaybackController pb, Color accent) {
+    const options = [5, 10, 15, 20, 30, 45, 60];
+    final current = pb.sessionDurationMinutes;
+    return SurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.hourglass_bottom_rounded,
+                  size: 16, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
+              const Expanded(child: Eyebrow('SESSION LENGTH')),
+              Text('$current분',
+                  style: AppTypography.tiny.copyWith(color: accent)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final m in options)
+                _sleepChip(
+                  label: '$m분',
+                  selected: current == m,
+                  accent: accent,
+                  onTap: () {
+                    pb.setSessionDurationMinutes(m);
+                    showToast(context, '재생 시간을 $m분으로 맞췄어요');
+                  },
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text('이 주파수를 얼마나 오래 재생할지 정해요 · 지금 바로 반영됩니다',
+              style: AppTypography.tiny.copyWith(fontSize: 10)),
         ],
       ),
     );

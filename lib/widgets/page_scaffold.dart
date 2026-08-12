@@ -15,12 +15,14 @@ class PageScaffold extends StatelessWidget {
     required this.title,
     required this.slivers,
     this.trailing,
+    this.leading,
   });
 
   final String eyebrow;
   final String title;
   final List<Widget> slivers;
   final Widget? trailing;
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +44,10 @@ class PageScaffold extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (leading != null) ...[
+                  leading!,
+                  const SizedBox(width: 12),
+                ],
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

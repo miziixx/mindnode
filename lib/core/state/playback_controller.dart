@@ -234,6 +234,33 @@ class PlaybackController extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
+  /// 단일 단계 세션인지(재생 길이를 통째로 조정 가능한지).
+  /// 시퀀스(다단계)는 스튜디오에서 단계별로 시간을 조정한다.
+  bool get canAdjustDuration => (_session?.stages.length ?? 0) == 1;
+
+  /// 현재 세션의 전체 재생 길이(분, 반올림).
+  int get sessionDurationMinutes =>
+      _session == null ? 0 : (totalDurationSec / 60).round();
+
+  /// 단일 단계 세션의 재생 길이(분)를 조정한다. 준비/재생 중 모두 즉시 반영.
+  /// 세션은 원본 프리셋의 복제본이라 원본은 바뀌지 않는다.
+  void setSessionDurationMinutes(int minutes) {
+    final s = _session;
+    if (s == null || s.stages.length != 1) return;
+    final newSec = minutes.clamp(1, 180) * 60;
+    // 단일 단계에선 (전체 길이 - 남은 시간) == 지금까지 흐른 시간.
+    final elapsed = (totalDurationSec - totalRemainingSec).clamp(0, newSec);
+    s.stages.first.durationSec = newSec;
+    totalDurationSec = s.totalDurationSec;
+    totalRemainingSec = (totalDurationSec - elapsed).clamp(0, totalDurationSec);
+    if (totalDurationSec > 0) {
+      progressFraction =
+          1.0 - (totalRemainingSec / totalDurationSec).clamp(0.0, 1.0);
+    }
+    _markModified();
+    notifyListeners();
+  }
+
   /// 수면 타이머 설정(분). 0이면 끔. 재생 중 카운트다운, 0에서 부드럽게 종료.
   void setSleepTimerMinutes(int minutes) {
     sleepTimerSetMinutes = minutes <= 0 ? 0 : minutes;
