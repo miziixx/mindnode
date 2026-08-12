@@ -115,17 +115,31 @@ class _StudioScreenState extends State<StudioScreen> {
         children: [
           const Eyebrow('Primary frequency'),
           const SizedBox(height: 14),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(tone.frequencyHz.toStringAsFixed(2),
-                  style: AppTypography.frequencyDisplay.copyWith(fontSize: 46)),
-              const SizedBox(width: 8),
-              Text('Hz', style: AppTypography.body),
-            ],
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => _inputPrimaryFrequency(tone),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(tone.frequencyHz.toStringAsFixed(2),
+                      style:
+                          AppTypography.frequencyDisplay.copyWith(fontSize: 46)),
+                  const SizedBox(width: 8),
+                  Text('Hz', style: AppTypography.body),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.edit_outlined,
+                      size: 16, color: AppColors.textMuted),
+                ],
+              ),
+            ),
           ),
+          Text('숫자를 탭해 직접 입력',
+              style: AppTypography.tiny
+                  .copyWith(fontSize: 10, color: AppColors.textMuted)),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -162,6 +176,22 @@ class _StudioScreenState extends State<StudioScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _inputPrimaryFrequency(ToneLayer tone) async {
+    final v = await showNumberInputDialog(
+      context,
+      title: '주파수 직접 입력',
+      initial: tone.frequencyHz,
+      min: FreqLimits.min,
+      max: FreqLimits.maxAbsolute,
+      unit: 'Hz',
+    );
+    if (v == null) return;
+    setState(() {
+      tone.frequencyHz = v.clamp(FreqLimits.min, FreqLimits.maxAbsolute);
+      if (_stage.drone.enabled) _stage.drone.centerHz = tone.frequencyHz;
+    });
   }
 
   String _fmtStep(double s) =>

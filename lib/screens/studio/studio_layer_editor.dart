@@ -5,6 +5,7 @@ import '../../core/design/app_typography.dart';
 import '../../core/models/audio_asset.dart';
 import '../../core/models/layers.dart';
 import '../../core/models/preset.dart';
+import '../../widgets/dialogs.dart';
 import '../../widgets/layer_hints.dart';
 
 /// 스튜디오 드래프트 레이어 편집 시트(재생 세션과 무관하게 드래프트를 직접 수정).
@@ -127,7 +128,9 @@ class _EditorState extends State<_Editor> {
   List<Widget> _tone(ToneLayer t) => [
         _slider('주파수', '${t.frequencyHz.toStringAsFixed(1)}Hz',
             (t.frequencyHz - 20) / (2000 - 20),
-            (v) => _apply(() => t.frequencyHz = 20 + v * (2000 - 20))),
+            (v) => _apply(() => t.frequencyHz = 20 + v * (2000 - 20)),
+            onEdit: () => _editHz('주파수', t.frequencyHz, FreqLimits.min,
+                FreqLimits.maxAbsolute, (hz) => _apply(() => t.frequencyHz = hz))),
         _slider('음량', '${t.gainDb.toStringAsFixed(0)}dB', (t.gainDb + 60) / 60,
             (v) => _apply(() => t.gainDb = v * 60 - 60)),
       ];
@@ -135,7 +138,9 @@ class _EditorState extends State<_Editor> {
   List<Widget> _drone(DroneLayer d) => [
         _slider('중심 주파수', '${d.centerHz.toStringAsFixed(1)}Hz',
             (d.centerHz - 20) / (2000 - 20),
-            (v) => _apply(() => d.centerHz = 20 + v * (2000 - 20))),
+            (v) => _apply(() => d.centerHz = 20 + v * (2000 - 20)),
+            onEdit: () => _editHz('중심 주파수', d.centerHz, FreqLimits.min,
+                FreqLimits.maxAbsolute, (hz) => _apply(() => d.centerHz = hz))),
         Text('Sub ${d.subHz.toStringAsFixed(0)} · Main ${d.mainHz.toStringAsFixed(0)} · Air ${d.airHz.toStringAsFixed(0)} Hz',
             style: AppTypography.tiny),
         _slider('Sub', '${(d.subVoiceRatio * 100).round()}%', d.subVoiceRatio,
@@ -162,9 +167,13 @@ class _EditorState extends State<_Editor> {
         ),
         _slider('기준 주파수', '${b.carrierHz.toStringAsFixed(0)}Hz',
             (b.carrierHz - 50) / 450,
-            (v) => _apply(() => b.carrierHz = 50 + v * 450)),
+            (v) => _apply(() => b.carrierHz = 50 + v * 450),
+            onEdit: () => _editHz('기준 주파수', b.carrierHz, 50, 500,
+                (hz) => _apply(() => b.carrierHz = hz))),
         _slider('비트 주파수', '${b.beatHz.toStringAsFixed(2)}Hz', b.beatHz / 40,
-            (v) => _apply(() => b.beatHz = (v * 40).clamp(0.5, 40))),
+            (v) => _apply(() => b.beatHz = (v * 40).clamp(0.5, 40)),
+            onEdit: () => _editHz('비트 주파수', b.beatHz, 0.5, 40,
+                (hz) => _apply(() => b.beatHz = hz))),
         Text('L ${b.leftHz.toStringAsFixed(1)}Hz · R ${b.rightHz.toStringAsFixed(1)}Hz',
             style: AppTypography.label),
         _switchRow('좌우 반전', b.invert, (v) => _apply(() => b.invert = v)),
@@ -173,9 +182,13 @@ class _EditorState extends State<_Editor> {
   List<Widget> _pulse(PulseLayer p) => [
         _slider('중심 주파수', '${p.frequencyHz.toStringAsFixed(1)}Hz',
             (p.frequencyHz - 50) / 950,
-            (v) => _apply(() => p.frequencyHz = 50 + v * 950)),
+            (v) => _apply(() => p.frequencyHz = 50 + v * 950),
+            onEdit: () => _editHz('중심 주파수', p.frequencyHz, 50, 1000,
+                (hz) => _apply(() => p.frequencyHz = hz))),
         _slider('펄스 속도', '${p.rateHz.toStringAsFixed(2)}Hz', p.rateHz / 20,
-            (v) => _apply(() => p.rateHz = (v * 20).clamp(0.1, 20))),
+            (v) => _apply(() => p.rateHz = (v * 20).clamp(0.1, 20)),
+            onEdit: () => _editHz('펄스 속도', p.rateHz, 0.1, 20,
+                (hz) => _apply(() => p.rateHz = hz))),
         _slider('펄스 깊이', '${(p.depth * 100).round()}%', p.depth,
             (v) => _apply(() => p.depth = v)),
         _switchRow('좌우 교차', p.stereoMode == PulseStereoMode.alternate,
@@ -222,8 +235,22 @@ class _EditorState extends State<_Editor> {
     ];
   }
 
+  Future<void> _editHz(String label, double current, double min, double max,
+      ValueChanged<double> onSet) async {
+    final v = await showNumberInputDialog(
+      context,
+      title: '$label 직접 입력',
+      initial: current,
+      min: min,
+      max: max,
+      unit: 'Hz',
+    );
+    if (v != null) onSet(v);
+  }
+
   Widget _slider(String label, String value, double v,
-      ValueChanged<double> onChanged) {
+      ValueChanged<double> onChanged,
+      {Future<void> Function()? onEdit}) {
     final hint = layerHint(label);
     return Padding(
       padding: const EdgeInsets.only(top: 14),
@@ -232,7 +259,22 @@ class _EditorState extends State<_Editor> {
         children: [
           Row(children: [
             Expanded(child: Text(label, style: AppTypography.label)),
-            Text(value, style: AppTypography.tiny),
+            if (onEdit != null)
+              InkWell(
+                onTap: onEdit,
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text(value, style: AppTypography.tiny),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.edit_outlined,
+                        size: 13, color: AppColors.textMuted),
+                  ]),
+                ),
+              )
+            else
+              Text(value, style: AppTypography.tiny),
           ]),
           Slider(value: v.clamp(0.0, 1.0), onChanged: onChanged),
           if (hint.isNotEmpty)

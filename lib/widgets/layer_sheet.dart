@@ -7,7 +7,22 @@ import '../core/models/audio_asset.dart';
 import '../core/models/layers.dart';
 import '../core/state/playback_controller.dart';
 import 'common.dart';
+import 'dialogs.dart';
 import 'layer_hints.dart';
+
+/// 주파수 직접 입력 프롬프트. 확인 시 [onSet] 콜백에 클램프된 값을 전달.
+Future<void> _promptHz(BuildContext context, String label, double current,
+    double min, double max, ValueChanged<double> onSet) async {
+  final v = await showNumberInputDialog(
+    context,
+    title: '$label 직접 입력',
+    initial: current,
+    min: min,
+    max: max,
+    unit: 'Hz',
+  );
+  if (v != null) onSet(v);
+}
 
 /// 레이어 상세 바텀시트. 화면 높이 70~90%까지 확장. 상단에 레이어 포인트색 얇게.
 Future<void> showLayerSheet(BuildContext context, String layerId,
@@ -145,7 +160,10 @@ class _LayerSheet extends StatelessWidget {
     }
 
     return [
-      _FrequencyBlock(hz: tone.frequencyHz, onDelta: (d) => setHz(tone.frequencyHz + d)),
+      _FrequencyBlock(
+          hz: tone.frequencyHz,
+          onDelta: (d) => setHz(tone.frequencyHz + d),
+          onSet: setHz),
       _sliderRow('레이어 음량', '${tone.gainDb.toStringAsFixed(0)}dB',
           (tone.gainDb + 60) / 60, (v) {
         pb.setLayerGainDb(primary ? 'primary' : 'secondary', v * 60 - 60);
@@ -167,6 +185,10 @@ class _LayerSheet extends StatelessWidget {
           onDelta: (delta) {
             d.centerHz =
                 (d.centerHz + delta).clamp(FreqLimits.min, FreqLimits.maxAbsolute);
+            pb.updateDrone();
+          },
+          onSet: (v) {
+            d.centerHz = v.clamp(FreqLimits.min, FreqLimits.maxAbsolute);
             pb.updateDrone();
           }),
       Text('Sub ${d.subHz.toStringAsFixed(1)} · Main ${d.mainHz.toStringAsFixed(1)} · Air ${d.airHz.toStringAsFixed(1)} Hz',
@@ -223,12 +245,18 @@ class _LayerSheet extends StatelessWidget {
           (b.carrierHz - 50) / 450, (v) {
         b.carrierHz = 50 + v * 450;
         pb.updateBinaural();
-      }),
+      }, onEdit: () => _promptHz(context, '기준 주파수', b.carrierHz, 50, 500, (hz) {
+        b.carrierHz = hz;
+        pb.updateBinaural();
+      })),
       _sliderRow('비트 주파수', '${b.beatHz.toStringAsFixed(2)}Hz', b.beatHz / 40,
           (v) {
         b.beatHz = (v * 40).clamp(0.5, 40);
         pb.updateBinaural();
-      }),
+      }, onEdit: () => _promptHz(context, '비트 주파수', b.beatHz, 0.5, 40, (hz) {
+        b.beatHz = hz;
+        pb.updateBinaural();
+      })),
       Semantics(
         label: '왼쪽 ${b.leftHz.toStringAsFixed(1)}헤르츠, 오른쪽 ${b.rightHz.toStringAsFixed(1)}헤르츠',
         child: Text(
@@ -250,12 +278,18 @@ class _LayerSheet extends StatelessWidget {
           (p.frequencyHz - 50) / 950, (v) {
         p.frequencyHz = 50 + v * 950;
         pb.updatePulse();
-      }),
+      }, onEdit: () => _promptHz(context, '중심 주파수', p.frequencyHz, 50, 1000, (hz) {
+        p.frequencyHz = hz;
+        pb.updatePulse();
+      })),
       _sliderRow('펄스 속도', '${p.rateHz.toStringAsFixed(2)}Hz', p.rateHz / 20,
           (v) {
         p.rateHz = (v * 20).clamp(0.1, 20);
         pb.updatePulse();
-      }),
+      }, onEdit: () => _promptHz(context, '펄스 속도', p.rateHz, 0.1, 20, (hz) {
+        p.rateHz = hz;
+        pb.updatePulse();
+      })),
       _sliderRow('펄스 깊이', '${(p.depth * 100).round()}%', p.depth, (v) {
         p.depth = v;
         pb.updatePulse();
@@ -340,7 +374,8 @@ class _LayerSheet extends StatelessWidget {
 }
 
 Widget _sliderRow(
-    String label, String value, double v, ValueChanged<double> onChanged) {
+    String label, String value, double v, ValueChanged<double> onChanged,
+    {VoidCallback? onEdit}) {
   final hint = layerHint(label);
   return Padding(
     padding: const EdgeInsets.only(top: 16),
@@ -349,7 +384,22 @@ Widget _sliderRow(
       children: [
         Row(children: [
           Expanded(child: Text(label, style: AppTypography.label)),
-          Text(value, style: AppTypography.tiny),
+          if (onEdit != null)
+            InkWell(
+              onTap: onEdit,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text(value, style: AppTypography.tiny),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.edit_outlined,
+                      size: 13, color: AppColors.textMuted),
+                ]),
+              ),
+            )
+          else
+            Text(value, style: AppTypography.tiny),
         ]),
         Slider(value: v.clamp(0.0, 1.0), onChanged: onChanged),
         if (hint.isNotEmpty)
@@ -386,9 +436,13 @@ Widget _toggleRow(String label, bool value, ValueChanged<bool> onChanged) {
 
 class _FrequencyBlock extends StatelessWidget {
   const _FrequencyBlock(
-      {required this.hz, required this.onDelta, this.label = 'CURRENT VALUE'});
+      {required this.hz,
+      required this.onDelta,
+      this.onSet,
+      this.label = 'CURRENT VALUE'});
   final double hz;
   final void Function(double delta) onDelta;
+  final void Function(double value)? onSet;
   final String label;
 
   @override
@@ -405,8 +459,33 @@ class _FrequencyBlock extends StatelessWidget {
         Text(label.toUpperCase(),
             style: AppTypography.eyebrow, textAlign: TextAlign.center),
         const SizedBox(height: 8),
-        Text('${hz.toStringAsFixed(1)} Hz',
-            style: AppTypography.frequencyDisplay.copyWith(fontSize: 36)),
+        InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onSet == null
+              ? null
+              : () => _promptHz(context, label == 'CURRENT VALUE' ? '주파수' : label,
+                  hz, FreqLimits.min, FreqLimits.maxAbsolute, onSet!),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text('${hz.toStringAsFixed(1)} Hz',
+                    style: AppTypography.frequencyDisplay.copyWith(fontSize: 36)),
+                if (onSet != null) ...[
+                  const SizedBox(width: 8),
+                  const Icon(Icons.edit_outlined,
+                      size: 16, color: AppColors.textMuted),
+                ],
+              ],
+            ),
+          ),
+        ),
+        if (onSet != null)
+          Text('숫자를 탭해 직접 입력',
+              style: AppTypography.tiny
+                  .copyWith(fontSize: 10, color: AppColors.textMuted)),
         const SizedBox(height: 12),
         Row(
           children: [
