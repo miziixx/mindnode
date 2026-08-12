@@ -142,6 +142,7 @@ class Preset {
   bool isBuiltIn; // 기본 프리셋 여부
   bool favorite;
   int? chakraIndex; // 차크라 프리셋이면 1..7
+  int repeatCount; // 전체 세션 반복 횟수(1=한 번, 0=무한 반복)
 
   Preset({
     this.schemaVersion = kPresetSchemaVersion,
@@ -156,6 +157,7 @@ class Preset {
     this.isBuiltIn = false,
     this.favorite = false,
     this.chakraIndex,
+    this.repeatCount = 1,
   }) : stages = stages ?? [SessionStage(id: 'main')];
 
   int get totalDurationSec =>
@@ -177,6 +179,7 @@ class Preset {
         isBuiltIn: j['isBuiltIn'] as bool? ?? false,
         favorite: j['favorite'] as bool? ?? false,
         chakraIndex: (j['chakraIndex'] as num?)?.toInt(),
+        repeatCount: (j['repeatCount'] as num?)?.toInt() ?? 1,
       );
 
   Map<String, dynamic> toJson() => {
@@ -192,6 +195,7 @@ class Preset {
         'isBuiltIn': isBuiltIn,
         'favorite': favorite,
         'chakraIndex': chakraIndex,
+        'repeatCount': repeatCount,
       };
 
   Preset copyWith({String? id, String? title, bool? isBuiltIn}) {

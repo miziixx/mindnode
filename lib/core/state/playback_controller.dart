@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart' show WidgetsBinding, WidgetsBindingObserver, AppLifecycleState;
 
@@ -70,6 +71,13 @@ class PlaybackController extends ChangeNotifier with WidgetsBindingObserver {
   // 수면 타이머(0 = 꺼짐). 남은 시간이 0에 도달하면 부드럽게 종료.
   int sleepRemainingSec = 0;
   int sleepTimerSetMinutes = 0; // UI 선택 표시용(원래 설정값)
+  // 세션 반복. 몇 번째 반복인지 추적(0-based 완료 횟수).
+  int _repeatsDone = 0;
+  // 사용자 배경 음악(엔진과 별개 스트림). 파일 경로/이름/음량.
+  AudioPlayer? _music;
+  String? backgroundMusicPath;
+  String? backgroundMusicName;
+  double musicVolume01 = 0.6;
   // 청력 배려: 큰 음량으로 오래 들으면 1회 안내.
   int _playingElapsedSec = 0;
   bool _hearingNudged = false;
@@ -93,6 +101,12 @@ class PlaybackController extends ChangeNotifier with WidgetsBindingObserver {
 
   bool get isActive => state.isActive;
   bool get isPlaying => state == PlaybackState.playing;
+
+  // 반복 관련.
+  int get repeatCount => _session?.repeatCount ?? 1;
+  bool get isRepeatInfinite => repeatCount == 0;
+  int get currentRepeat => _repeatsDone + 1; // 1-based 표시용
+  bool get hasBackgroundMusic => backgroundMusicPath != null;
 
   Future<void> ensureInitialized() async {
     if (!engineReady) {
@@ -127,10 +141,12 @@ class PlaybackController extends ChangeNotifier with WidgetsBindingObserver {
     currentStageIndex = 0;
     _stageElapsedSec = 0;
     _playingElapsedSec = 0;
+    _repeatsDone = 0;
     sleepRemainingSec = 0;
     sleepTimerSetMinutes = 0;
     _hearingNudged = false;
     hearingNudgeActive = false;
+    _musicPause();
     totalDurationSec = _session!.totalDurationSec;
     totalRemainingSec = totalDurationSec;
     progressFraction = 0;
@@ -160,6 +176,7 @@ class PlaybackController extends ChangeNotifier with WidgetsBindingObserver {
     _sessionStartedAt = DateTime.now();
     await engine.setMasterGain(masterVolume01);
     await engine.start();
+    await _musicResume();
     state = PlaybackState.playing;
     _startTicker();
     notifyListeners();
@@ -168,6 +185,7 @@ class PlaybackController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> pause() async {
     if (state != PlaybackState.playing) return;
     await engine.pause();
+    await _musicPause();
     state = PlaybackState.paused;
     _ticker?.cancel();
     notifyListeners();
@@ -176,6 +194,7 @@ class PlaybackController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> resume() async {
     if (state != PlaybackState.paused) return;
     await engine.resume();
+    await _musicResume();
     state = PlaybackState.playing;
     _startTicker();
     notifyListeners();
@@ -259,6 +278,69 @@ class PlaybackController extends ChangeNotifier with WidgetsBindingObserver {
     }
     _markModified();
     notifyListeners();
+  }
+
+  /// 세션 반복 횟수 설정. 1=한 번, 0=무한 반복. 재생 중에도 즉시 반영.
+  void setRepeatCount(int count) {
+    final s = _session;
+    if (s == null) return;
+    s.repeatCount = count < 0 ? 0 : count;
+    _markModified();
+    notifyListeners();
+  }
+
+  /// 사용자가 고른 배경 음악 파일을 설정하고, 재생 중이면 바로 함께 재생한다.
+  Future<void> setBackgroundMusic(String path, String name) async {
+    backgroundMusicPath = path;
+    backgroundMusicName = name;
+    _music ??= AudioPlayer();
+    try {
+      await _music!.setReleaseMode(ReleaseMode.loop);
+      await _music!.setVolume(musicVolume01);
+      await _music!.setSource(DeviceFileSource(path));
+      if (state == PlaybackState.playing) await _music!.resume();
+    } catch (e) {
+      lastError = 'music: $e';
+    }
+    notifyListeners();
+  }
+
+  /// 배경 음악 음량(0..1).
+  Future<void> setMusicVolume(double v01) async {
+    musicVolume01 = v01.clamp(0.0, 1.0);
+    try {
+      await _music?.setVolume(musicVolume01);
+    } catch (_) {}
+    notifyListeners();
+  }
+
+  /// 배경 음악 제거.
+  Future<void> clearBackgroundMusic() async {
+    backgroundMusicPath = null;
+    backgroundMusicName = null;
+    try {
+      await _music?.stop();
+    } catch (_) {}
+    notifyListeners();
+  }
+
+  Future<void> _musicResume() async {
+    if (backgroundMusicPath == null) return;
+    try {
+      await _music?.resume();
+    } catch (_) {}
+  }
+
+  Future<void> _musicPause() async {
+    try {
+      await _music?.pause();
+    } catch (_) {}
+  }
+
+  Future<void> _musicStop() async {
+    try {
+      await _music?.stop();
+    } catch (_) {}
   }
 
   /// 수면 타이머 설정(분). 0이면 끔. 재생 중 카운트다운, 0에서 부드럽게 종료.
@@ -528,6 +610,9 @@ class PlaybackController extends ChangeNotifier with WidgetsBindingObserver {
           currentStageIndex++;
           _stageElapsedSec = 0;
           engine.nextStage();
+        } else if (_shouldRepeat()) {
+          // 반복: 정지 없이 처음으로 되감아 계속 재생.
+          _loopToStart();
         } else {
           _completeByTimer();
           return;
@@ -535,6 +620,24 @@ class PlaybackController extends ChangeNotifier with WidgetsBindingObserver {
       }
       notifyListeners();
     });
+  }
+
+  /// 아직 반복이 남았는지. repeatCount 0이면 무한.
+  bool _shouldRepeat() {
+    final rc = _session?.repeatCount ?? 1;
+    if (rc == 0) return true;
+    return _repeatsDone + 1 < rc;
+  }
+
+  /// 세션을 처음으로 되감아 반복 재생(오디오는 끊지 않는다).
+  void _loopToStart() {
+    _repeatsDone++;
+    currentStageIndex = 0;
+    _stageElapsedSec = 0;
+    totalRemainingSec = totalDurationSec;
+    progressFraction = 0;
+    if (stageCount > 1) engine.seekToStage(0);
+    notifyListeners();
   }
 
   /// 타이머 종료 → 부드러운 페이드아웃 후 완료 처리.
@@ -576,6 +679,7 @@ class PlaybackController extends ChangeNotifier with WidgetsBindingObserver {
       ));
     }
     _sessionStartedAt = null;
+    await _musicStop();
     if (!completed) {
       state = PlaybackState.idle;
     }
@@ -583,6 +687,7 @@ class PlaybackController extends ChangeNotifier with WidgetsBindingObserver {
     currentStageIndex = 0;
     _stageElapsedSec = 0;
     _playingElapsedSec = 0;
+    _repeatsDone = 0;
     sleepRemainingSec = 0;
     sleepTimerSetMinutes = 0;
     _hearingNudged = false;
@@ -607,6 +712,7 @@ class PlaybackController extends ChangeNotifier with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _ticker?.cancel();
     _sub?.cancel();
+    _music?.dispose();
     engine.dispose();
     super.dispose();
   }

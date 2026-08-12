@@ -14,6 +14,7 @@ import '../../core/state/playback_controller.dart';
 import '../../widgets/app_icons.dart';
 import '../../widgets/breathing_guide.dart';
 import '../../widgets/common.dart';
+import '../../widgets/dialogs.dart';
 import '../../widgets/dreamy_background.dart';
 
 /// 레이키 세션 종류.
@@ -204,11 +205,35 @@ class _ReikiSetupScreenState extends State<ReikiSetupScreen> {
                     Row(children: [
                       Expanded(
                           child: Text('명상 시간', style: AppTypography.label)),
-                      Text('$_meditationMin분',
-                          style: AppTypography.tiny.copyWith(color: _accent)),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () async {
+                          final r = await showNumberInputDialog(context,
+                              title: '명상 시간 직접 입력',
+                              initial: _meditationMin.toDouble(),
+                              min: 1,
+                              max: 60,
+                              unit: '분',
+                              decimals: 0);
+                          if (r != null) {
+                            setState(() => _meditationMin = r.round());
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 3),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Text('$_meditationMin분',
+                                style: AppTypography.tiny
+                                    .copyWith(color: _accent)),
+                            const SizedBox(width: 4),
+                            Icon(Icons.edit_outlined, size: 13, color: _accent),
+                          ]),
+                        ),
+                      ),
                     ]),
                     Slider(
-                      value: _meditationMin.toDouble(),
+                      value: _meditationMin.toDouble().clamp(1, 15),
                       min: 1,
                       max: 15,
                       onChanged: (v) =>
@@ -261,7 +286,29 @@ class _ReikiSetupScreenState extends State<ReikiSetupScreen> {
           children: [
             Row(children: [
               Expanded(child: Text(label, style: AppTypography.label)),
-              Text(value, style: AppTypography.tiny.copyWith(color: _accent)),
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () async {
+                  final r = await showNumberInputDialog(context,
+                      title: '$label 직접 입력',
+                      initial: v,
+                      min: min,
+                      max: max,
+                      unit: '분',
+                      decimals: 0);
+                  if (r != null) onChanged(r);
+                },
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text(value,
+                        style: AppTypography.tiny.copyWith(color: _accent)),
+                    const SizedBox(width: 4),
+                    Icon(Icons.edit_outlined, size: 13, color: _accent),
+                  ]),
+                ),
+              ),
             ]),
             Slider(value: v, min: min, max: max, onChanged: onChanged),
           ],

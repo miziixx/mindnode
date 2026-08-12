@@ -84,6 +84,8 @@ class _StudioScreenState extends State<StudioScreen> {
             style: AppTypography.tiny),
         const SizedBox(height: 16),
         _frequencyEditor(),
+        const SizedBox(height: 12),
+        _repeatRow(),
         const SizedBox(height: 16),
         _tabs(),
         const SizedBox(height: 12),
@@ -196,6 +198,76 @@ class _StudioScreenState extends State<StudioScreen> {
 
   String _fmtStep(double s) =>
       s == s.roundToDouble() ? s.toStringAsFixed(0) : s.toStringAsFixed(1);
+
+  // ── 반복 횟수 ──
+  Widget _repeatRow() {
+    const options = [1, 2, 3, 5, 10];
+    final rc = _draft.repeatCount; // 0 = 무한
+    Widget chip(String label, bool selected, VoidCallback onTap) =>
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+            decoration: BoxDecoration(
+              color: selected
+                  ? AppColors.accent.withOpacity(0.22)
+                  : AppColors.surface3,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                  color: selected
+                      ? AppColors.accent.withOpacity(0.6)
+                      : AppColors.softDivider),
+            ),
+            child: Text(label,
+                style: AppTypography.tiny.copyWith(
+                    color: selected
+                        ? AppColors.textPrimary
+                        : AppColors.textSecondary)),
+          ),
+        );
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: AppColors.surface1,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.softDivider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Icon(Icons.repeat_rounded,
+                size: 16, color: AppColors.textSecondary),
+            const SizedBox(width: 8),
+            const Expanded(child: Eyebrow('반복 횟수')),
+            Text(rc == 0 ? '무한' : '$rc회',
+                style: AppTypography.tiny.copyWith(color: AppColors.accent)),
+          ]),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final n in options)
+                chip(n == 1 ? '반복 없음' : '$n회', rc == n,
+                    () => setState(() => _draft.repeatCount = n)),
+              chip('무한', rc == 0, () => setState(() => _draft.repeatCount = 0)),
+              chip('직접 입력', rc > 1 && !options.contains(rc), () async {
+                final v = await showNumberInputDialog(context,
+                    title: '반복 횟수 직접 입력',
+                    initial: (rc == 0 ? 2 : rc).toDouble(),
+                    min: 1,
+                    max: 99,
+                    unit: '회',
+                    decimals: 0);
+                if (v != null) setState(() => _draft.repeatCount = v.round());
+              }),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _tabs() {
     Widget tab(String label, bool active, VoidCallback onTap) => Expanded(
@@ -447,11 +519,26 @@ class _StudioScreenState extends State<StudioScreen> {
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Text('단계 시간 ${minutes.round()}분', style: AppTypography.h3),
             Slider(
-              value: minutes,
+              value: minutes.clamp(1, 60),
               min: 1,
               max: 60,
               onChanged: (v) => setSt(() => minutes = v),
             ),
+            SecondaryButton(
+              label: '숫자로 직접 입력',
+              icon: Icons.edit_outlined,
+              onPressed: () async {
+                final v = await showNumberInputDialog(context,
+                    title: '단계 시간 직접 입력',
+                    initial: minutes,
+                    min: 1,
+                    max: 180,
+                    unit: '분',
+                    decimals: 0);
+                if (v != null) setSt(() => minutes = v);
+              },
+            ),
+            const SizedBox(height: 8),
             PrimaryButton(
               label: '확인',
               onPressed: () {

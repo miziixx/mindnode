@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -120,6 +121,10 @@ class PlayerScreen extends StatelessWidget {
                   _durationCard(context, pb, accent),
                   const SizedBox(height: 12),
                 ],
+                _repeatCard(context, pb, accent),
+                const SizedBox(height: 12),
+                _musicCard(context, pb, accent),
+                const SizedBox(height: 12),
                 _sleepTimer(context, pb, accent),
                 const SizedBox(height: 12),
                 _breathingToggle(context, app),
@@ -374,6 +379,25 @@ class PlayerScreen extends StatelessWidget {
                     showToast(context, '재생 시간을 $m분으로 맞췄어요');
                   },
                 ),
+              _sleepChip(
+                label: '직접 입력',
+                selected: !options.contains(current),
+                accent: accent,
+                onTap: () async {
+                  final v = await showNumberInputDialog(context,
+                      title: '재생 시간 직접 입력',
+                      initial: current.toDouble(),
+                      min: 1,
+                      max: 180,
+                      unit: '분',
+                      decimals: 0);
+                  if (v == null) return;
+                  pb.setSessionDurationMinutes(v.round());
+                  if (context.mounted) {
+                    showToast(context, '재생 시간을 ${v.round()}분으로 맞췄어요');
+                  }
+                },
+              ),
             ],
           ),
           const SizedBox(height: 6),
@@ -382,6 +406,154 @@ class PlayerScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _repeatCard(
+      BuildContext context, PlaybackController pb, Color accent) {
+    const options = [1, 2, 3, 5, 10];
+    final rc = pb.repeatCount; // 0 = 무한
+    return SurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.repeat_rounded,
+                  size: 16, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
+              const Expanded(child: Eyebrow('REPEAT')),
+              Text(
+                pb.isRepeatInfinite
+                    ? '무한'
+                    : (pb.isActive && rc > 1
+                        ? '${pb.currentRepeat} / $rc회'
+                        : '$rc회'),
+                style: AppTypography.tiny.copyWith(color: accent),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final n in options)
+                _sleepChip(
+                  label: n == 1 ? '반복 없음' : '$n회',
+                  selected: rc == n,
+                  accent: accent,
+                  onTap: () => pb.setRepeatCount(n),
+                ),
+              _sleepChip(
+                label: '무한',
+                selected: rc == 0,
+                accent: accent,
+                onTap: () => pb.setRepeatCount(0),
+              ),
+              _sleepChip(
+                label: '직접 입력',
+                selected: rc > 1 && !options.contains(rc),
+                accent: accent,
+                onTap: () async {
+                  final v = await showNumberInputDialog(context,
+                      title: '반복 횟수 직접 입력',
+                      initial: (rc == 0 ? 2 : rc).toDouble(),
+                      min: 1,
+                      max: 99,
+                      unit: '회',
+                      decimals: 0);
+                  if (v != null) pb.setRepeatCount(v.round());
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text('세션이 끝나면 자동으로 처음부터 다시 재생돼요',
+              style: AppTypography.tiny.copyWith(fontSize: 10)),
+        ],
+      ),
+    );
+  }
+
+  Widget _musicCard(
+      BuildContext context, PlaybackController pb, Color accent) {
+    final has = pb.hasBackgroundMusic;
+    return SurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.library_music_outlined,
+                  size: 16, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
+              const Expanded(child: Eyebrow('MY MUSIC')),
+              if (has)
+                GestureDetector(
+                  onTap: () async {
+                    await pb.clearBackgroundMusic();
+                    if (context.mounted) showToast(context, '배경 음악을 제거했어요');
+                  },
+                  child: Text('제거',
+                      style: AppTypography.tiny.copyWith(color: accent)),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (!has)
+            SecondaryButton(
+              label: '내 음악 파일 불러오기',
+              icon: Icons.add_rounded,
+              onPressed: () => _pickMusic(context, pb),
+            )
+          else ...[
+            Row(
+              children: [
+                const Icon(Icons.music_note_rounded,
+                    size: 18, color: AppColors.textSecondary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(pb.backgroundMusicName ?? '음악',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.label),
+                ),
+                TextButton(
+                  onPressed: () => _pickMusic(context, pb),
+                  child: Text('변경', style: AppTypography.tiny),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                const Icon(Icons.volume_up_outlined,
+                    size: 16, color: AppColors.textMuted),
+                Expanded(
+                  child: Slider(
+                    value: pb.musicVolume01,
+                    onChanged: (v) => pb.setMusicVolume(v),
+                  ),
+                ),
+                Text('${(pb.musicVolume01 * 100).round()}%',
+                    style: AppTypography.tiny),
+              ],
+            ),
+          ],
+          const SizedBox(height: 4),
+          Text('내 기기의 음악 파일을 주파수와 함께 재생해요 · 음량은 따로 조절돼요',
+              style: AppTypography.tiny.copyWith(fontSize: 10)),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickMusic(BuildContext context, PlaybackController pb) async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.audio);
+    final file = result?.files.single;
+    final path = file?.path;
+    if (path == null) return;
+    await pb.setBackgroundMusic(path, file?.name ?? '음악');
+    if (context.mounted) showToast(context, '배경 음악을 추가했어요');
   }
 
   Widget _sleepTimer(BuildContext context, PlaybackController pb, Color accent) {
