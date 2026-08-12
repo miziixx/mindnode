@@ -208,8 +208,6 @@ class PlayerScreen extends StatelessWidget {
                   binauralActive: stage.binaural.enabled,
                   size: size,
                   seed: session.id.hashCode.abs(),
-                  onStyleChanged: (s) => showToast(
-                      context, kVizStyleNames[s.index]),
                 ),
               // 텍스트는 탭을 통과시켜(IgnorePointer) 시각화 스타일 순환을 방해하지 않음.
               IgnorePointer(
