@@ -15,11 +15,13 @@ import sys
 CSP = (
     "default-src 'self'; "
     "script-src 'self' 'wasm-unsafe-eval' https://www.gstatic.com; "
-    "style-src 'self' 'unsafe-inline'; "
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     "img-src 'self' data: blob:; "
     "media-src 'self' blob: data:; "
-    "font-src 'self' data:; "
-    "connect-src 'self' blob: data: https://www.gstatic.com; "
+    # CanvasKit이 한글 등 폰트를 fonts.gstatic.com에서 받아온다.
+    "font-src 'self' data: https://fonts.gstatic.com; "
+    "connect-src 'self' blob: data: https://www.gstatic.com "
+    "https://fonts.gstatic.com https://fonts.googleapis.com; "
     "worker-src 'self' blob:; "
     "object-src 'none'; "
     "base-uri 'self'; "
