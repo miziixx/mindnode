@@ -26,6 +26,7 @@ class WebAudioEngine implements AudioEngine {
   int _startFadeMs = 5000;
   int _endFadeMs = 10000;
   bool _playing = false;
+  bool _hooksAttached = false;
 
   Preset? _preset;
   int _stageIndex = 0;
@@ -48,8 +49,34 @@ class WebAudioEngine implements AudioEngine {
       m.connectNode(ctx.destination!);
       _master = m;
     }
+    _attachResumeHooks();
     _eventCtrl
         .add(EngineReady(sampleRate: ctx.sampleRate?.toDouble() ?? 48000));
+  }
+
+  /// iOS 사파리 등은 다른 앱으로 가면 AudioContext를 강제로 suspend 한다.
+  /// 페이지로 돌아오거나(가시성 복귀) 화면을 탭할 때 자동으로 재개한다.
+  void _attachResumeHooks() {
+    if (_hooksAttached) return;
+    _hooksAttached = true;
+    void resumeIfNeeded() {
+      final c = _ctx;
+      if (c == null) return;
+      if (_playing && c.state == 'suspended') {
+        try {
+          c.resume();
+        } catch (_) {}
+      }
+    }
+
+    html.document.addEventListener('visibilitychange', (_) {
+      if (html.document.visibilityState == 'visible') resumeIfNeeded();
+    });
+    html.window.addEventListener('focus', (_) => resumeIfNeeded());
+    // 어떤 탭/터치든 suspended 상태면 해제(사용자 제스처 컨텍스트에서만 허용됨).
+    for (final ev in const ['pointerdown', 'touchend', 'click']) {
+      html.document.addEventListener(ev, (_) => resumeIfNeeded());
+    }
   }
 
   @override
