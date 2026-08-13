@@ -87,6 +87,10 @@ jobs:
       - run: flutter create --org com.mindsound --project-name mindsound --platforms=web .
       - run: flutter pub get
       - run: flutter build web --release --no-wasm-dry-run --base-href /mindnode/
+      # 정적 호스팅엔 커스텀 HTTP 헤더를 못 붙이므로 index.html에 CSP 메타를 주입.
+      # Flutter CanvasKit(gstatic) + 우리 앱의 blob/미디어 재생까지 허용하는 정책.
+      - name: Inject security headers (CSP meta)
+        run: python3 tools/inject_csp.py build/web/index.html
       - name: Deploy to GitHub Pages (gh-pages)
         uses: peaceiris/actions-gh-pages@v4
         with:
