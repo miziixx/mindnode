@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:html' as html;
+import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:web_audio' as wa;
 
@@ -78,9 +79,7 @@ class WebAudioEngine implements AudioEngine {
 
   void _teardownStage() {
     for (final s in _sources) {
-      try {
-        (s as dynamic).stop();
-      } catch (_) {}
+      _stopNode(s);
       try {
         s.disconnect();
       } catch (_) {}
@@ -108,9 +107,23 @@ class WebAudioEngine implements AudioEngine {
     final o = _ctx!.createOscillator();
     o.type = 'sine';
     o.frequency!.value = hz.clamp(FreqLimits.min, FreqLimits.maxAbsolute);
-    o.start();
+    _startNode(o);
     _sources.add(o);
     return o;
+  }
+
+  // dart:web_audio 바인딩에 start/stop이 노출되지 않는 경우가 있어,
+  // JS 메서드를 이름으로 직접 호출한다(런타임 JS 노드엔 항상 존재).
+  void _startNode(wa.AudioNode n) {
+    try {
+      js_util.callMethod(n, 'start', const []);
+    } catch (_) {}
+  }
+
+  void _stopNode(wa.AudioNode n) {
+    try {
+      js_util.callMethod(n, 'stop', const []);
+    } catch (_) {}
   }
 
   /// 스테이지의 모든 레이어 노드를 새로 구성한다.
@@ -176,7 +189,7 @@ class WebAudioEngine implements AudioEngine {
       final lfo = _ctx!.createOscillator();
       lfo.type = 'sine';
       lfo.frequency!.value = pl.rateHz.clamp(0.1, 20);
-      lfo.start();
+      _startNode(lfo);
       _sources.add(lfo);
       lfo.connectNode(lfoDepth);
     }
@@ -211,7 +224,7 @@ class WebAudioEngine implements AudioEngine {
       src.buffer = buf;
       src.loop = true;
       src.connectNode(dest);
-      src.start();
+      _startNode(src);
       _sources.add(src);
     } catch (_) {
       // 음원 로드 실패는 무시(합성 톤은 계속 재생).
@@ -372,7 +385,7 @@ class WebAudioEngine implements AudioEngine {
       final src = ctx.createBufferSource();
       src.buffer = buf;
       src.connectNode(g);
-      src.start();
+      _startNode(src);
     } catch (_) {}
   }
 
