@@ -14,33 +14,57 @@ import '../../widgets/page_scaffold.dart';
 import '../player/player_screen.dart';
 import 'studio_layer_editor.dart';
 
-/// 스튜디오 에디터를 라우트로 연다(없으면 새 사운드부터 시작).
+/// 스튜디오 에디터를 라우트로 연다(없으면 새 사운드부터 시작). 모바일 경로.
 Future<void> openStudioEditor(BuildContext context, {Preset? source}) {
   return Navigator.of(context).push(
-    MaterialPageRoute(builder: (_) => StudioScreen(source: source)),
+    MaterialPageRoute(builder: (_) => StudioEditor(source: source)),
   );
 }
 
-/// 만들기 · 사운드 스튜디오. 드래프트 프리셋을 편집한다.
-class StudioScreen extends StatefulWidget {
-  const StudioScreen({super.key, this.source});
+/// 사운드 스튜디오 편집기. 드래프트 프리셋을 편집한다.
+///
+/// - [embedded]=false(기본): 뒤로가기·저장 헤더가 있는 전체 화면(모바일 라우트).
+/// - [embedded]=true: 헤더 없이 편집 컬럼만 렌더(데스크톱 3열 워크스페이스 중앙).
+///   변경 시 [onChanged]로 외부(오른쪽 인스펙터 등)에 알린다.
+class StudioEditor extends StatefulWidget {
+  const StudioEditor({
+    super.key,
+    this.source,
+    this.embedded = false,
+    this.onChanged,
+  });
 
-  /// 기존 프리셋을 편집 시작점으로 전달 가능(없으면 새 사운드).
   final Preset? source;
+  final bool embedded;
+  final VoidCallback? onChanged;
 
   @override
-  State<StudioScreen> createState() => _StudioScreenState();
+  State<StudioEditor> createState() => StudioEditorState();
 }
 
-class _StudioScreenState extends State<StudioScreen> {
-  late Preset _draft;
-  bool _sequenceTab = false;
-  int _stageIndex = 0;
+class StudioEditorState extends State<StudioEditor> {
+  late Preset draft;
+  Preset? _source;
+  int stageIndex = 0;
+  bool sequenceTab = false;
 
   @override
   void initState() {
     super.initState();
-    _draft = widget.source?.deepCopy() ?? _newDraft();
+    _source = widget.source;
+    draft = widget.source?.deepCopy() ?? _newDraft();
+    // 첫 프레임 후 인스펙터가 초기 값을 읽을 수 있도록 알림.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onChanged?.call();
+    });
+  }
+
+  SessionStage get stage => draft.stages[stageIndex];
+
+  /// 내부 변경 + 외부 통지.
+  void _mut(VoidCallback f) {
+    setState(f);
+    widget.onChanged?.call();
   }
 
   Preset _newDraft() {
@@ -60,52 +84,75 @@ class _StudioScreenState extends State<StudioScreen> {
     );
   }
 
-  SessionStage get _stage => _draft.stages[_stageIndex];
+  // ── 외부(워크스페이스 라이브러리/인스펙터)에서 호출하는 공개 API ──
+  void loadSource(Preset? p) {
+    _mut(() {
+      _source = p;
+      draft = p?.deepCopy() ?? _newDraft();
+      stageIndex = 0;
+      sequenceTab = false;
+    });
+  }
+
+  void setTitle(String t) {
+    _mut(() => draft.title = t.trim().isEmpty ? '무제' : t.trim());
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: PageScaffold(
-      leading: IconChipButton(
-        icon: AppIcons.back,
-        tooltip: '뒤로',
-        onTap: () => Navigator.of(context).maybePop(),
-      ),
-      eyebrow: 'Sound studio',
-      title: _draft.title,
-      trailing: IconChipButton(
-        icon: AppIcons.save,
-        tooltip: '저장',
-        onTap: _save,
-      ),
-      slivers: [
-        Text(widget.source == null ? '저장되지 않음' : '${widget.source!.title} 기반',
-            style: AppTypography.tiny),
-        const SizedBox(height: 16),
-        _frequencyEditor(),
-        const SizedBox(height: 12),
-        _repeatRow(),
-        const SizedBox(height: 16),
-        _tabs(),
-        const SizedBox(height: 12),
-        if (_sequenceTab) ..._sequenceView() else ..._layersView(),
+    final content = <Widget>[
+      Text(_source == null ? '저장되지 않음' : '${_source!.title} 기반',
+          style: AppTypography.tiny),
+      const SizedBox(height: 16),
+      _frequencyEditor(),
+      const SizedBox(height: 12),
+      _repeatRow(),
+      const SizedBox(height: 16),
+      _tabs(),
+      const SizedBox(height: 12),
+      if (sequenceTab) ..._sequenceView() else ..._layersView(),
+      if (!widget.embedded) ...[
         const SizedBox(height: 20),
         PrimaryButton(
           label: '현재 구성 미리 듣기',
           icon: AppIcons.play,
-          onPressed: () => openPresetInPlayer(context, _draft),
+          onPressed: () => openPresetInPlayer(context, draft),
         ),
         const SizedBox(height: 10),
-        SecondaryButton(label: '프리셋 저장', icon: AppIcons.save, onPressed: _save),
+        SecondaryButton(label: '프리셋 저장', icon: AppIcons.save, onPressed: save),
       ],
+    ];
+
+    if (widget.embedded) {
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(22, 22, 22, 120),
+        children: content,
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: PageScaffold(
+        leading: IconChipButton(
+          icon: AppIcons.back,
+          tooltip: '뒤로',
+          onTap: () => Navigator.of(context).maybePop(),
+        ),
+        eyebrow: 'Sound studio',
+        title: draft.title,
+        trailing: IconChipButton(
+          icon: AppIcons.save,
+          tooltip: '저장',
+          onTap: save,
+        ),
+        slivers: content,
       ),
     );
   }
 
   // ── 큰 주파수 입력 ──
   Widget _frequencyEditor() {
-    final tone = _stage.primaryTone;
+    final tone = stage.primaryTone;
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 22, 18, 18),
       decoration: BoxDecoration(
@@ -150,11 +197,11 @@ class _StudioScreenState extends State<StudioScreen> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 3),
                     child: OutlinedButton(
-                      onPressed: () => setState(() {
+                      onPressed: () => _mut(() {
                         tone.frequencyHz = (tone.frequencyHz + d)
                             .clamp(FreqLimits.min, FreqLimits.maxAbsolute);
-                        if (_stage.drone.enabled) {
-                          _stage.drone.centerHz = tone.frequencyHz;
+                        if (stage.drone.enabled) {
+                          stage.drone.centerHz = tone.frequencyHz;
                         }
                       }),
                       style: OutlinedButton.styleFrom(
@@ -190,9 +237,9 @@ class _StudioScreenState extends State<StudioScreen> {
       unit: 'Hz',
     );
     if (v == null) return;
-    setState(() {
+    _mut(() {
       tone.frequencyHz = v.clamp(FreqLimits.min, FreqLimits.maxAbsolute);
-      if (_stage.drone.enabled) _stage.drone.centerHz = tone.frequencyHz;
+      if (stage.drone.enabled) stage.drone.centerHz = tone.frequencyHz;
     });
   }
 
@@ -202,7 +249,7 @@ class _StudioScreenState extends State<StudioScreen> {
   // ── 반복 횟수 ──
   Widget _repeatRow() {
     const options = [1, 2, 3, 5, 10];
-    final rc = _draft.repeatCount; // 0 = 무한
+    final rc = draft.repeatCount; // 0 = 무한
     Widget chip(String label, bool selected, VoidCallback onTap) =>
         GestureDetector(
           onTap: onTap,
@@ -250,8 +297,8 @@ class _StudioScreenState extends State<StudioScreen> {
             children: [
               for (final n in options)
                 chip(n == 1 ? '반복 없음' : '$n회', rc == n,
-                    () => setState(() => _draft.repeatCount = n)),
-              chip('무한', rc == 0, () => setState(() => _draft.repeatCount = 0)),
+                    () => _mut(() => draft.repeatCount = n)),
+              chip('무한', rc == 0, () => _mut(() => draft.repeatCount = 0)),
               chip('직접 입력', rc > 1 && !options.contains(rc), () async {
                 final v = await showNumberInputDialog(context,
                     title: '반복 횟수 직접 입력',
@@ -260,7 +307,7 @@ class _StudioScreenState extends State<StudioScreen> {
                     max: 99,
                     unit: '회',
                     decimals: 0);
-                if (v != null) setState(() => _draft.repeatCount = v.round());
+                if (v != null) _mut(() => draft.repeatCount = v.round());
               }),
             ],
           ),
@@ -295,15 +342,15 @@ class _StudioScreenState extends State<StudioScreen> {
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(children: [
-        tab('레이어', !_sequenceTab, () => setState(() => _sequenceTab = false)),
-        tab('시퀀스', _sequenceTab, () => setState(() => _sequenceTab = true)),
+        tab('레이어', !sequenceTab, () => _mut(() => sequenceTab = false)),
+        tab('시퀀스', sequenceTab, () => _mut(() => sequenceTab = true)),
       ]),
     );
   }
 
   // ── 레이어 뷰 ──
   List<Widget> _layersView() {
-    final s = _stage;
+    final s = stage;
     return [
       Container(
         decoration: BoxDecoration(
@@ -314,40 +361,38 @@ class _StudioScreenState extends State<StudioScreen> {
         child: Column(children: [
           _layerRow('PRIMARY TONE', '${s.primaryTone.frequencyHz.toStringAsFixed(2)}Hz',
               AppIcons.wave, s.primaryTone.enabled,
-              (v) => setState(() => s.primaryTone.enabled = v),
+              (v) => _mut(() => s.primaryTone.enabled = v),
               () => _editLayer('primary')),
           _layerRow('DRONE',
               '${s.drone.subHz.toStringAsFixed(0)} / ${s.drone.mainHz.toStringAsFixed(0)} / ${s.drone.airHz.toStringAsFixed(0)}Hz',
               AppIcons.drone, s.drone.enabled,
-              (v) => setState(() => s.drone.enabled = v),
+              (v) => _mut(() => s.drone.enabled = v),
               () => _editLayer('drone')),
           _layerRow('SECONDARY', '${s.secondaryTone.frequencyHz.toStringAsFixed(2)}Hz',
               AppIcons.wave, s.secondaryTone.enabled,
-              (v) => setState(() => s.secondaryTone.enabled = v),
+              (v) => _mut(() => s.secondaryTone.enabled = v),
               () => _editLayer('secondary')),
           _layerRow('BINAURAL', '${s.binaural.beatHz.toStringAsFixed(1)}Hz beat',
               AppIcons.binaural, s.binaural.enabled,
-              (v) => setState(() => s.binaural.enabled = v),
+              (v) => _mut(() => s.binaural.enabled = v),
               () => _editLayer('binaural')),
           _layerRow('PULSE',
               '${s.pulse.rateHz.toStringAsFixed(1)}Hz · ${(s.pulse.depth * 100).round()}%',
               AppIcons.pulse, s.pulse.enabled,
-              (v) => setState(() => s.pulse.enabled = v),
+              (v) => _mut(() => s.pulse.enabled = v),
               () => _editLayer('pulse')),
           _layerRow('NATURE', AssetCatalog.displayNameOf(s.natureAssetId),
               AppIcons.nature, s.natureAssetId != null, (v) {
-            setState(() => s.natureAssetId =
-                v ? AssetCatalog.nature.first.id : null);
+            _mut(() =>
+                s.natureAssetId = v ? AssetCatalog.nature.first.id : null);
           }, () => _editLayer('nature')),
           _layerRow('PAD', AssetCatalog.displayNameOf(s.padAssetId),
               AppIcons.pad, s.padAssetId != null, (v) {
-            setState(
-                () => s.padAssetId = v ? AssetCatalog.pads.first.id : null);
+            _mut(() => s.padAssetId = v ? AssetCatalog.pads.first.id : null);
           }, () => _editLayer('pad')),
           _layerRow('CHIME', AssetCatalog.displayNameOf(s.chimeAssetId),
               AppIcons.chime, s.chimeAssetId != null, (v) {
-            setState(
-                () => s.chimeAssetId = v ? AssetCatalog.chimes.first.id : null);
+            _mut(() => s.chimeAssetId = v ? AssetCatalog.chimes.first.id : null);
           }, () => _editLayer('chime')),
         ]),
       ),
@@ -400,19 +445,19 @@ class _StudioScreenState extends State<StudioScreen> {
   }
 
   void _editLayer(String id) {
-    showStudioLayerEditor(context, _stage, id, () => setState(() {}));
+    showStudioLayerEditor(context, stage, id, () => _mut(() {}));
   }
 
   // ── 시퀀스 뷰 ──
   List<Widget> _sequenceView() {
     return [
-      for (var i = 0; i < _draft.stages.length; i++)
-        _stepCard(i, _draft.stages[i]),
+      for (var i = 0; i < draft.stages.length; i++)
+        _stepCard(i, draft.stages[i]),
       const SizedBox(height: 12),
       SecondaryButton(
         label: '＋ 단계 추가',
-        onPressed: () => setState(() {
-          _draft.stages.add(SessionStage(
+        onPressed: () => _mut(() {
+          draft.stages.add(SessionStage(
             id: 'stage_${DateTime.now().millisecondsSinceEpoch}',
             title: '새 단계',
             durationSec: 180,
@@ -421,19 +466,19 @@ class _StudioScreenState extends State<StudioScreen> {
         }),
       ),
       const SizedBox(height: 8),
-      Text('전체 예상 시간 ${(_draft.totalDurationSec / 60).round()}분',
+      Text('전체 예상 시간 ${(draft.totalDurationSec / 60).round()}분',
           style: AppTypography.tiny),
     ];
   }
 
-  Widget _stepCard(int i, SessionStage stage) {
-    final freq = stage.displayFrequencyHz;
+  Widget _stepCard(int i, SessionStage stg) {
+    final freq = stg.displayFrequencyHz;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: SurfaceCard(
         radius: 15,
         onTap: () {
-          setState(() => _stageIndex = i);
+          setState(() => stageIndex = i);
           _editLayer('primary');
         },
         child: Row(children: [
@@ -446,8 +491,7 @@ class _StudioScreenState extends State<StudioScreen> {
             ),
             alignment: Alignment.center,
             child: Text((i + 1).toString().padLeft(2, '0'),
-                style: AppTypography.tiny
-                    .copyWith(fontWeight: FontWeight.w700)),
+                style: AppTypography.tiny.copyWith(fontWeight: FontWeight.w700)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -456,39 +500,38 @@ class _StudioScreenState extends State<StudioScreen> {
               children: [
                 Text(
                     freq != null
-                        ? '${freq.toStringAsFixed(0)}Hz · ${stage.title}'
-                        : '무음 · ${stage.title}',
+                        ? '${freq.toStringAsFixed(0)}Hz · ${stg.title}'
+                        : '무음 · ${stg.title}',
                     style: AppTypography.label
                         .copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 3),
-                Text('${(stage.durationSec / 60).toStringAsFixed(stage.durationSec % 60 == 0 ? 0 : 1)}분',
+                Text('${(stg.durationSec / 60).toStringAsFixed(stg.durationSec % 60 == 0 ? 0 : 1)}분',
                     style: AppTypography.tiny),
               ],
             ),
           ),
           IconButton(
             icon: const Icon(Icons.keyboard_arrow_up_rounded, size: 20),
-            onPressed:
-                i > 0 ? () => setState(() => _swap(i, i - 1)) : null,
+            onPressed: i > 0 ? () => _mut(() => _swap(i, i - 1)) : null,
           ),
           IconButton(
             icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
-            onPressed: i < _draft.stages.length - 1
-                ? () => setState(() => _swap(i, i + 1))
+            onPressed: i < draft.stages.length - 1
+                ? () => _mut(() => _swap(i, i + 1))
                 : null,
           ),
           PopupMenuButton<String>(
             icon: const Icon(AppIcons.more, size: 20),
             color: AppColors.surface3,
-            onSelected: (v) => setState(() {
+            onSelected: (v) => _mut(() {
               if (v == 'dup') {
-                _draft.stages.insert(i + 1, stage.copy()
+                draft.stages.insert(i + 1, stg.copy()
                   ..id = 'stage_${DateTime.now().millisecondsSinceEpoch}');
-              } else if (v == 'del' && _draft.stages.length > 1) {
-                _draft.stages.removeAt(i);
-                _stageIndex = _stageIndex.clamp(0, _draft.stages.length - 1);
+              } else if (v == 'del' && draft.stages.length > 1) {
+                draft.stages.removeAt(i);
+                stageIndex = stageIndex.clamp(0, draft.stages.length - 1);
               } else if (v == 'time') {
-                _editDuration(i, stage);
+                _editDuration(i, stg);
               }
             }),
             itemBuilder: (_) => const [
@@ -503,13 +546,13 @@ class _StudioScreenState extends State<StudioScreen> {
   }
 
   void _swap(int a, int b) {
-    final tmp = _draft.stages[a];
-    _draft.stages[a] = _draft.stages[b];
-    _draft.stages[b] = tmp;
+    final tmp = draft.stages[a];
+    draft.stages[a] = draft.stages[b];
+    draft.stages[b] = tmp;
   }
 
-  void _editDuration(int i, SessionStage stage) {
-    double minutes = (stage.durationSec / 60).clamp(1, 60).toDouble();
+  void _editDuration(int i, SessionStage stg) {
+    double minutes = (stg.durationSec / 60).clamp(1, 60).toDouble();
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF151A22),
@@ -542,7 +585,7 @@ class _StudioScreenState extends State<StudioScreen> {
             PrimaryButton(
               label: '확인',
               onPressed: () {
-                setState(() => stage.durationSec = (minutes * 60).round());
+                _mut(() => stg.durationSec = (minutes * 60).round());
                 Navigator.pop(ctx);
               },
             ),
@@ -553,11 +596,11 @@ class _StudioScreenState extends State<StudioScreen> {
   }
 
   // ── 저장 ──
-  Future<void> _save() async {
+  Future<void> save() async {
     final app = context.read<AppState>();
-    final nameCtrl = TextEditingController(text: _draft.title);
+    final nameCtrl = TextEditingController(text: draft.title);
 
-    if (widget.source != null && widget.source!.isBuiltIn) {
+    if (_source != null && _source!.isBuiltIn) {
       // 기본 프리셋 편집: 3가지 선택
       final choice = await showModalBottomSheet<String>(
         context: context,
@@ -582,18 +625,18 @@ class _StudioScreenState extends State<StudioScreen> {
         ),
       );
       if (choice == 'override') {
-        _draft.id = widget.source!.id;
-        _draft.isBuiltIn = true;
-        await app.presets.saveBuiltInOverride(_draft);
+        draft.id = _source!.id;
+        draft.isBuiltIn = true;
+        await app.presets.saveBuiltInOverride(draft);
         app.refresh();
         if (mounted) showToast(context, '기본 프리셋을 수정했습니다');
         return;
       } else if (choice == 'session') {
-        if (mounted) openPresetInPlayer(context, _draft);
+        if (mounted) openPresetInPlayer(context, draft);
         return;
       } else if (choice == 'new') {
-        // 기본 프리셋을 시작점으로 삼아 새로 저장할 때 id가 겹치지 않게 새 id 부여.
-        _draft.id = 'user_${DateTime.now().millisecondsSinceEpoch}';
+        // 기본 프리셋을 시작점으로 새로 저장할 때 id 충돌 방지.
+        draft.id = 'user_${DateTime.now().millisecondsSinceEpoch}';
       } else {
         return;
       }
@@ -620,13 +663,13 @@ class _StudioScreenState extends State<StudioScreen> {
       ),
     );
     if (ok == true) {
-      _draft.title = nameCtrl.text.trim().isEmpty ? '무제' : nameCtrl.text.trim();
-      _draft.isBuiltIn = false;
-      await app.presets.saveUserPreset(_draft);
+      draft.title = nameCtrl.text.trim().isEmpty ? '무제' : nameCtrl.text.trim();
+      draft.isBuiltIn = false;
+      await app.presets.saveUserPreset(draft);
       app.refresh();
       if (mounted) {
         showToast(context, '저장되었습니다');
-        setState(() {});
+        _mut(() {});
       }
     }
   }

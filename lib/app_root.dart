@@ -7,7 +7,7 @@ import 'core/state/app_state.dart';
 import 'core/state/playback_controller.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/chakra/chakra_screen.dart';
-import 'screens/studio/studio_home_screen.dart';
+import 'screens/studio/studio_workspace.dart';
 import 'screens/records/records_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
@@ -41,7 +41,7 @@ class _TabShell extends StatelessWidget {
   static const _pages = [
     HomeScreen(),
     ChakraScreen(),
-    StudioHomeScreen(),
+    StudioTab(),
     RecordsScreen(),
     SettingsScreen(),
   ];
