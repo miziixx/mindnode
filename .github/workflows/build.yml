@@ -72,6 +72,27 @@ jobs:
           prerelease: true
           files: mindsound-release.apk
 
+  # 웹 빌드 + GitHub Pages 배포(gh-pages 브랜치). 프로젝트 사이트 경로 = /mindnode/.
+  web:
+    needs: audio-verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # gh-pages 브랜치 푸시
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      # 웹 스캐폴드 생성(lib/·pubspec·assets 유지). 웹은 네이티브 오버레이 불필요.
+      - run: flutter create --org com.mindsound --project-name mindsound --platforms=web .
+      - run: flutter pub get
+      - run: flutter build web --release --base-href /mindnode/
+      - name: Deploy to GitHub Pages (gh-pages)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+
   # iOS 빌드는 macOS 러너(비용 10배)라 수동 실행(workflow_dispatch)에서만 돈다.
   # GitHub Actions 분(minutes) 절약용.
   ios:

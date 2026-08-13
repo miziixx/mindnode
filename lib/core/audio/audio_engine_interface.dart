@@ -3,13 +3,14 @@ import 'package:flutter/services.dart';
 
 import '../models/preset.dart';
 import '../models/layers.dart';
+import 'audio_engine.dart';
 import 'audio_events.dart';
 
 /// Flutter ↔ 네이티브 오디오 엔진 브리지(타입 명확한 채널 인터페이스).
 ///
 /// Flutter는 오디오 샘플을 직접 생성/전달하지 않는다. 명령과 파라미터만 보낸다.
 /// 슬라이더는 목표값만 보내고, 실제 부드러운 램프는 네이티브 엔진이 담당한다.
-class AudioEngineInterface {
+class AudioEngineInterface implements AudioEngine {
   static const MethodChannel _method =
       MethodChannel('com.mindsound.app/audio');
   static const EventChannel _events =

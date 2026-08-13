@@ -9,6 +9,7 @@ import '../../core/models/audio_asset.dart';
 import '../../core/models/preset.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/playback_controller.dart';
+import '../../core/util/object_url.dart';
 import '../../widgets/app_icons.dart';
 import '../../widgets/breathing_guide.dart';
 import '../../widgets/common.dart';
@@ -548,11 +549,22 @@ class PlayerScreen extends StatelessWidget {
   }
 
   Future<void> _pickMusic(BuildContext context, PlaybackController pb) async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.audio);
+    final result = await FilePicker.platform
+        .pickFiles(type: FileType.audio, withData: true);
     final file = result?.files.single;
-    final path = file?.path;
-    if (path == null) return;
-    await pb.setBackgroundMusic(path, file?.name ?? '음악');
+    if (file == null) return;
+    final name = file.name;
+    if (file.path != null) {
+      // 모바일/데스크톱: 로컬 파일 경로.
+      await pb.setBackgroundMusic(file.path!, name);
+    } else if (file.bytes != null) {
+      // 웹: 바이트 → blob URL.
+      final url = makeObjectUrl(file.bytes!, 'audio/*');
+      if (url == null) return;
+      await pb.setBackgroundMusic(url, name, isUrl: true);
+    } else {
+      return;
+    }
     if (context.mounted) showToast(context, '배경 음악을 추가했어요');
   }
 

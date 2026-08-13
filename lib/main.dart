@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'core/audio/audio_engine_interface.dart';
+import 'core/audio/audio_engine_factory.dart';
 import 'core/design/app_theme.dart';
 import 'core/state/app_state.dart';
 import 'core/state/playback_controller.dart';
@@ -16,7 +16,7 @@ void main() {
   ));
 
   final appState = AppState();
-  final engine = AudioEngineInterface();
+  final engine = createAudioEngine();
   final playback = PlaybackController(
     engine: engine,
     presets: appState.presets,

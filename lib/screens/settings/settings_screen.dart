@@ -1,12 +1,10 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
 
+import '../../core/data/backup_export.dart';
 import '../../core/data/backup_service.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/design/app_typography.dart';
@@ -292,19 +290,11 @@ class SettingsScreen extends StatelessWidget {
   }
 
   // ── 백업/복원/삭제 ──
-  Future<File> _writeTemp(String name, Map<String, dynamic> data) async {
-    final dir = await getTemporaryDirectory();
-    final f = File('${dir.path}/$name');
-    await f.writeAsString(const JsonEncoder.withIndent('  ').convert(data));
-    return f;
-  }
-
   Future<void> _exportPresets(BuildContext context) async {
     final app = context.read<AppState>();
     try {
-      final f = await _writeTemp('mindsound_presets.json',
-          app.presets.exportData());
-      await Share.shareXFiles([XFile(f.path)], text: '마인드사운드 프리셋 백업');
+      await exportJson('mindsound_presets.json', app.presets.exportData(),
+          '마인드사운드 프리셋 백업');
     } catch (e) {
       if (context.mounted) showToast(context, '백업 실패: $e');
     }
@@ -313,9 +303,8 @@ class SettingsScreen extends StatelessWidget {
   Future<void> _exportRecords(BuildContext context) async {
     final app = context.read<AppState>();
     try {
-      final f = await _writeTemp('mindsound_records.json',
-          app.records.exportData());
-      await Share.shareXFiles([XFile(f.path)], text: '마인드사운드 기록 백업');
+      await exportJson('mindsound_records.json', app.records.exportData(),
+          '마인드사운드 기록 백업');
     } catch (e) {
       if (context.mounted) showToast(context, '백업 실패: $e');
     }
@@ -326,9 +315,11 @@ class SettingsScreen extends StatelessWidget {
     final res = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['json'],
+      withData: true, // 웹/모바일 공통: 경로 대신 바이트로 읽는다.
     );
-    if (res == null || res.files.single.path == null) return;
-    final text = await File(res.files.single.path!).readAsString();
+    final bytes = res?.files.single.bytes;
+    if (bytes == null) return;
+    final text = utf8.decode(bytes);
     final existing = app.presets.userPresets.map((p) => p.id).toSet();
     final preview = BackupService.inspect(text, existing);
     if (!context.mounted) return;

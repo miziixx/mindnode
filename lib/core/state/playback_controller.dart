@@ -3,7 +3,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart' show WidgetsBinding, WidgetsBindingObserver, AppLifecycleState;
 
-import '../audio/audio_engine_interface.dart';
+import '../audio/audio_engine.dart';
 import '../audio/audio_events.dart';
 import '../audio/playback_state.dart';
 import '../models/audio_asset.dart';
@@ -42,7 +42,7 @@ class PlaybackController extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  final AudioEngineInterface engine;
+  final AudioEngine engine;
   final PresetRepository presets;
   final RecordRepository records;
   final SettingsRepository settingsRepo;
@@ -289,15 +289,18 @@ class PlaybackController extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
-  /// 사용자가 고른 배경 음악 파일을 설정하고, 재생 중이면 바로 함께 재생한다.
-  Future<void> setBackgroundMusic(String path, String name) async {
+  /// 사용자가 고른 배경 음악을 설정하고, 재생 중이면 바로 함께 재생한다.
+  /// [isUrl]이 true면 URL(웹 blob 등), false면 로컬 파일 경로로 취급한다.
+  Future<void> setBackgroundMusic(String path, String name,
+      {bool isUrl = false}) async {
     backgroundMusicPath = path;
     backgroundMusicName = name;
     _music ??= AudioPlayer();
     try {
       await _music!.setReleaseMode(ReleaseMode.loop);
       await _music!.setVolume(musicVolume01);
-      await _music!.setSource(DeviceFileSource(path));
+      await _music!
+          .setSource(isUrl ? UrlSource(path) : DeviceFileSource(path));
       if (state == PlaybackState.playing) await _music!.resume();
     } catch (e) {
       lastError = 'music: $e';
