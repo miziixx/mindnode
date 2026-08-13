@@ -86,7 +86,7 @@ jobs:
       # 웹 스캐폴드 생성(lib/·pubspec·assets 유지). 웹은 네이티브 오버레이 불필요.
       - run: flutter create --org com.mindsound --project-name mindsound --platforms=web .
       - run: flutter pub get
-      - run: flutter build web --release --base-href /mindnode/
+      - run: flutter build web --release --no-wasm-dry-run --base-href /mindnode/
       - name: Deploy to GitHub Pages (gh-pages)
         uses: peaceiris/actions-gh-pages@v4
         with:

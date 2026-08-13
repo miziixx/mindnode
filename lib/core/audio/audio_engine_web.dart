@@ -30,24 +30,25 @@ class WebAudioEngine implements AudioEngine {
   int _stageIndex = 0;
   Map<String, String> _assetPaths = const {};
 
-  // 현재 스테이지의 활성 노드들(스테이지 교체/정지 시 정리).
-  final List<wa.AudioScheduledSourceNode> _sources = [];
+  // 현재 스테이지의 활성 소스 노드들(스테이지 교체/정지 시 정리).
+  final List<wa.AudioNode> _sources = [];
   final Map<String, wa.GainNode> _layerGains = {}; // layerId -> gain
   final Map<String, double> _layerTargetGain = {}; // 활성 시 목표 선형 게인
-  wa.GainNode? _natureGain;
-  wa.GainNode? _padGain;
 
   double _dbToLin(double db) => math.pow(10, db / 20).toDouble();
   double get _now => _ctx?.currentTime?.toDouble() ?? 0.0;
 
   @override
   Future<void> initialize() async {
-    _ctx ??= wa.AudioContext();
-    _master ??= _ctx!.createGain()
-      ..gain!.value = 0
-      ..connectNode(_ctx!.destination!);
-    _eventCtrl.add(EngineReady(
-        sampleRate: _ctx!.sampleRate?.toDouble() ?? 48000));
+    final ctx = _ctx ??= wa.AudioContext();
+    if (_master == null) {
+      final m = ctx.createGain();
+      m.gain!.value = 0;
+      m.connectNode(ctx.destination!);
+      _master = m;
+    }
+    _eventCtrl
+        .add(EngineReady(sampleRate: ctx.sampleRate?.toDouble() ?? 48000));
   }
 
   @override
@@ -78,7 +79,7 @@ class WebAudioEngine implements AudioEngine {
   void _teardownStage() {
     for (final s in _sources) {
       try {
-        s.stop();
+        (s as dynamic).stop();
       } catch (_) {}
       try {
         s.disconnect();
@@ -87,8 +88,29 @@ class WebAudioEngine implements AudioEngine {
     _sources.clear();
     _layerGains.clear();
     _layerTargetGain.clear();
-    _natureGain = null;
-    _padGain = null;
+  }
+
+  // --- 노드 생성 헬퍼 ---
+  wa.GainNode _gain(double value) {
+    final g = _ctx!.createGain();
+    g.gain!.value = value;
+    return g;
+  }
+
+  wa.StereoPannerNode _panner(double pan) {
+    final p = _ctx!.createStereoPanner();
+    p.pan!.value = pan.clamp(-1.0, 1.0);
+    return p;
+  }
+
+  /// 오실레이터를 만들고 즉시 start + 추적한다(연결은 호출측에서).
+  wa.OscillatorNode _osc(double hz) {
+    final o = _ctx!.createOscillator();
+    o.type = 'sine';
+    o.frequency!.value = hz.clamp(FreqLimits.min, FreqLimits.maxAbsolute);
+    o.start();
+    _sources.add(o);
+    return o;
   }
 
   /// 스테이지의 모든 레이어 노드를 새로 구성한다.
@@ -101,114 +123,79 @@ class WebAudioEngine implements AudioEngine {
     _stageIndex = index.clamp(0, p.stages.length - 1);
     final st = p.stages[_stageIndex];
 
-    wa.OscillatorNode osc(double hz) {
-      final o = ctx.createOscillator()
-        ..type = 'sine'
-        ..frequency!.value = hz.clamp(FreqLimits.min, FreqLimits.maxAbsolute);
-      return o;
-    }
-
-    wa.StereoPannerNode panner(double pan) =>
-        ctx.createStereoPanner()..pan!.value = pan.clamp(-1.0, 1.0);
-
-    void startAll(List<wa.AudioScheduledSourceNode> nodes) {
-      for (final n in nodes) {
-        try {
-          n.start();
-        } catch (_) {}
-        _sources.add(n);
-      }
-    }
-
-    // primary tone
-    _buildTone('primary', st.primaryTone, osc, panner, startAll, ctx, master);
-    // secondary tone
-    _buildTone(
-        'secondary', st.secondaryTone, osc, panner, startAll, ctx, master);
+    _buildTone('primary', st.primaryTone, master);
+    _buildTone('secondary', st.secondaryTone, master);
 
     // drone (sub/main/air)
     {
       final d = st.drone;
-      final g = ctx.createGain()
-        ..gain!.value = d.enabled ? _dbToLin(d.gainDb) : 0.0
-        ..connectNode(master);
+      final target = _dbToLin(d.gainDb);
+      final g = _gain(d.enabled ? target : 0.0);
+      g.connectNode(master);
       _layerGains['drone'] = g;
-      _layerTargetGain['drone'] = _dbToLin(d.gainDb);
-      final voices = <(double, double)>[
-        (d.subHz, d.subVoiceRatio),
-        (d.mainHz, d.mainVoiceRatio),
-        (d.airHz, d.airVoiceRatio),
+      _layerTargetGain['drone'] = target;
+      final voices = <List<double>>[
+        [d.subHz, d.subVoiceRatio],
+        [d.mainHz, d.mainVoiceRatio],
+        [d.airHz, d.airVoiceRatio],
       ];
       for (final v in voices) {
-        final vg = ctx.createGain()..gain!.value = v.$2;
-        final o = osc(v.$1)..connectNode(vg);
+        final vg = _gain(v[1]);
         vg.connectNode(g);
-        startAll([o]);
+        _osc(v[0]).connectNode(vg);
       }
     }
 
     // binaural (L/R)
     {
       final b = st.binaural;
-      final g = ctx.createGain()
-        ..gain!.value = b.enabled ? _dbToLin(b.gainDb) : 0.0
-        ..connectNode(master);
+      final target = _dbToLin(b.gainDb);
+      final g = _gain(b.enabled ? target : 0.0);
+      g.connectNode(master);
       _layerGains['binaural'] = g;
-      _layerTargetGain['binaural'] = _dbToLin(b.gainDb);
-      final oL = osc(b.leftHz)..connectNode(panner(-1)..connectNode(g));
-      final oR = osc(b.rightHz)..connectNode(panner(1)..connectNode(g));
-      startAll([oL, oR]);
+      _layerTargetGain['binaural'] = target;
+      final pL = _panner(-1)..connectNode(g);
+      final pR = _panner(1)..connectNode(g);
+      _osc(b.leftHz).connectNode(pL);
+      _osc(b.rightHz).connectNode(pR);
     }
 
-    // pulse (tremolo)
+    // pulse (트레몰로)
     {
       final pl = st.pulse;
       final base = _dbToLin(pl.gainDb);
-      final g = ctx.createGain()
-        ..gain!.value = pl.enabled ? base * (1 - pl.depth / 2) : 0.0
-        ..connectNode(master);
+      final baseline = base * (1 - pl.depth / 2);
+      final g = _gain(pl.enabled ? baseline : 0.0);
+      g.connectNode(master);
       _layerGains['pulse'] = g;
-      _layerTargetGain['pulse'] = base * (1 - pl.depth / 2);
-      final o = osc(pl.frequencyHz)..connectNode(g);
-      startAll([o]);
+      _layerTargetGain['pulse'] = baseline;
+      _osc(pl.frequencyHz).connectNode(g);
       // LFO로 게인 변조.
-      final lfo = ctx.createOscillator()
-        ..type = 'sine'
-        ..frequency!.value = pl.rateHz.clamp(0.1, 20);
-      final lfoDepth = ctx.createGain()..gain!.value = base * (pl.depth / 2);
-      lfo.connectNode(lfoDepth);
+      final lfoDepth = _gain(base * (pl.depth / 2));
       lfoDepth.connectParam(g.gain!);
-      startAll([lfo]);
+      final lfo = _ctx!.createOscillator();
+      lfo.type = 'sine';
+      lfo.frequency!.value = pl.rateHz.clamp(0.1, 20);
+      lfo.start();
+      _sources.add(lfo);
+      lfo.connectNode(lfoDepth);
     }
 
-    // 음원(자연음/패드) 루프 로드
-    _natureGain = ctx.createGain()
-      ..gain!.value = 0.5
-      ..connectNode(master);
-    _padGain = ctx.createGain()
-      ..gain!.value = 0.4
-      ..connectNode(master);
-    _loadLoop(st.natureAssetId, _natureGain!);
-    _loadLoop(st.padAssetId, _padGain!);
+    // 음원(자연음/패드) 루프
+    final natureGain = _gain(0.5)..connectNode(master);
+    final padGain = _gain(0.4)..connectNode(master);
+    _loadLoop(st.natureAssetId, natureGain);
+    _loadLoop(st.padAssetId, padGain);
   }
 
-  void _buildTone(
-    String id,
-    ToneLayer t,
-    wa.OscillatorNode Function(double) osc,
-    wa.StereoPannerNode Function(double) panner,
-    void Function(List<wa.AudioScheduledSourceNode>) startAll,
-    wa.AudioContext ctx,
-    wa.GainNode master,
-  ) {
-    final g = ctx.createGain()
-      ..gain!.value = t.enabled ? _dbToLin(t.gainDb) : 0.0;
-    final p = panner(t.pan)..connectNode(master);
+  void _buildTone(String id, ToneLayer t, wa.GainNode master) {
+    final target = _dbToLin(t.gainDb);
+    final g = _gain(t.enabled ? target : 0.0);
+    final p = _panner(t.pan)..connectNode(master);
     g.connectNode(p);
     _layerGains[id] = g;
-    _layerTargetGain[id] = _dbToLin(t.gainDb);
-    final o = osc(t.frequencyHz)..connectNode(g);
-    startAll([o]);
+    _layerTargetGain[id] = target;
+    _osc(t.frequencyHz).connectNode(g);
   }
 
   Future<void> _loadLoop(String? assetId, wa.GainNode dest) async {
@@ -217,13 +204,13 @@ class WebAudioEngine implements AudioEngine {
     final ctx = _ctx;
     if (path == null || ctx == null) return;
     try {
-      final req = await html.HttpRequest.request(path,
-          responseType: 'arraybuffer');
+      final req =
+          await html.HttpRequest.request(path, responseType: 'arraybuffer');
       final buf = await ctx.decodeAudioData(req.response);
-      final src = ctx.createBufferSource()
-        ..buffer = buf
-        ..loop = true
-        ..connectNode(dest);
+      final src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      src.connectNode(dest);
       src.start();
       _sources.add(src);
     } catch (_) {
@@ -239,10 +226,10 @@ class WebAudioEngine implements AudioEngine {
     await ctx.resume();
     _playing = true;
     final now = _now;
-    master.gain!
-      ..cancelScheduledValues(now)
-      ..setValueAtTime(master.gain!.value ?? 0, now)
-      ..linearRampToValueAtTime(_masterTarget, now + _startFadeMs / 1000.0);
+    final g = master.gain!;
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(g.value ?? 0, now);
+    g.linearRampToValueAtTime(_masterTarget, now + _startFadeMs / 1000.0);
     _eventCtrl.add(const PlaybackStateChanged(PlaybackState.playing));
   }
 
@@ -266,12 +253,11 @@ class WebAudioEngine implements AudioEngine {
     if (master == null) return;
     final fade = graceful ? _endFadeMs / 1000.0 : 0.02;
     final now = _now;
-    master.gain!
-      ..cancelScheduledValues(now)
-      ..setValueAtTime(master.gain!.value ?? _masterTarget, now)
-      ..linearRampToValueAtTime(0, now + fade);
+    final g = master.gain!;
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(g.value ?? _masterTarget, now);
+    g.linearRampToValueAtTime(0, now + fade);
     _playing = false;
-    // 페이드 후 소스 정리.
     Future.delayed(Duration(milliseconds: (fade * 1000).round() + 60), () {
       _teardownStage();
       _ctx?.suspend();
@@ -280,10 +266,7 @@ class WebAudioEngine implements AudioEngine {
   }
 
   @override
-  Future<void> seekToStage(int index) async {
-    _buildStage(index);
-    // 재생 중이면 새 스테이지 노드가 이미 start 됨(마스터 게인 유지).
-  }
+  Future<void> seekToStage(int index) async => _buildStage(index);
 
   @override
   Future<void> nextStage() => seekToStage(_stageIndex + 1);
@@ -295,24 +278,22 @@ class WebAudioEngine implements AudioEngine {
   Future<void> setMasterGain(double gain01) async {
     _masterTarget = gain01.clamp(0.0, 1.0);
     final master = _master;
-    if (master == null) return;
+    if (master == null || !_playing) return;
     final now = _now;
-    if (_playing) {
-      master.gain!
-        ..cancelScheduledValues(now)
-        ..setValueAtTime(master.gain!.value ?? 0, now)
-        ..linearRampToValueAtTime(_masterTarget, now + 0.05);
-    }
+    final g = master.gain!;
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(g.value ?? 0, now);
+    g.linearRampToValueAtTime(_masterTarget, now + 0.05);
   }
 
   void _rampLayerGain(String layerId, double target) {
-    final g = _layerGains[layerId];
-    if (g == null) return;
+    final gn = _layerGains[layerId];
+    if (gn == null) return;
     final now = _now;
-    g.gain!
-      ..cancelScheduledValues(now)
-      ..setValueAtTime(g.gain!.value ?? 0, now)
-      ..linearRampToValueAtTime(target, now + 0.03);
+    final g = gn.gain!;
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(g.value ?? 0, now);
+    g.linearRampToValueAtTime(target, now + 0.03);
   }
 
   @override
@@ -335,8 +316,6 @@ class WebAudioEngine implements AudioEngine {
       _setToneFreq('secondary', hz);
 
   void _setToneFreq(String id, double hz) {
-    // 톤 오실레이터는 게인 노드에 연결돼 있으나, 여기선 스테이지 재구성 없이
-    // 주파수만 갱신하기 위해 별도 추적이 필요하므로 스테이지를 다시 만든다.
     final st = _stage;
     if (st == null) return;
     if (id == 'primary') {
@@ -348,14 +327,16 @@ class WebAudioEngine implements AudioEngine {
   }
 
   @override
-  Future<void> setDroneParameters(DroneLayer d) async => _buildStage(_stageIndex);
+  Future<void> setDroneParameters(DroneLayer d) async =>
+      _buildStage(_stageIndex);
 
   @override
   Future<void> setBinauralParameters(BinauralLayer b) async =>
       _buildStage(_stageIndex);
 
   @override
-  Future<void> setPulseParameters(PulseLayer p) async => _buildStage(_stageIndex);
+  Future<void> setPulseParameters(PulseLayer p) async =>
+      _buildStage(_stageIndex);
 
   @override
   Future<void> setNatureAsset(String? assetId, String? assetPath) async {
@@ -384,15 +365,13 @@ class WebAudioEngine implements AudioEngine {
     final path = assetPath ?? (assetId != null ? _assetPaths[assetId] : null);
     if (ctx == null || master == null || path == null) return;
     try {
-      final req = await html.HttpRequest.request(path,
-          responseType: 'arraybuffer');
+      final req =
+          await html.HttpRequest.request(path, responseType: 'arraybuffer');
       final buf = await ctx.decodeAudioData(req.response);
-      final g = ctx.createGain()
-        ..gain!.value = 0.7
-        ..connectNode(master);
-      final src = ctx.createBufferSource()
-        ..buffer = buf
-        ..connectNode(g);
+      final g = _gain(0.7)..connectNode(master);
+      final src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connectNode(g);
       src.start();
     } catch (_) {}
   }
