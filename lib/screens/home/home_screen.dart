@@ -11,6 +11,7 @@ import '../../widgets/app_icons.dart';
 import '../../widgets/common.dart';
 import '../../widgets/dialogs.dart';
 import '../../widgets/page_scaffold.dart';
+import '../../widgets/responsive_grid.dart';
 import '../player/player_screen.dart';
 import '../reiki/reiki_screen.dart';
 
@@ -51,21 +52,17 @@ class HomeScreen extends StatelessWidget {
         Text('주파수와 드론, 자연음을 조합해 나만의 세션을 시작하세요.',
             style: AppTypography.body),
         const SizedBox(height: 24),
-        for (final q in _quick)
-          Builder(builder: (context) {
-            final preset = app.presets.byId(q.$1);
-            if (preset == null) return const SizedBox.shrink();
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _StatusCard(
-                preset: preset,
+        ResponsiveGrid(children: [
+          for (final q in _quick)
+            if (app.presets.byId(q.$1) != null)
+              _StatusCard(
+                preset: app.presets.byId(q.$1)!,
                 accent: q.$2,
                 // 레이키는 전용 셋업/재생 화면으로 이동.
                 onOpenOverride:
                     q.$1 == 'reiki_self' ? () => openReiki(context) : null,
               ),
-            );
-          }),
+        ]),
         const SizedBox(height: 24),
         SectionHeader('목적별 추천'),
         Padding(
@@ -73,15 +70,11 @@ class HomeScreen extends StatelessWidget {
           child: Text('수면·집중·이완 등 목적별 세션이에요. 이어폰을 끼면 바이노럴 효과가 또렷해집니다.',
               style: AppTypography.tiny),
         ),
-        for (final r in _recommended)
-          Builder(builder: (context) {
-            final preset = app.presets.byId(r.$1);
-            if (preset == null) return const SizedBox.shrink();
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _StatusCard(preset: preset, accent: r.$2),
-            );
-          }),
+        ResponsiveGrid(children: [
+          for (final r in _recommended)
+            if (app.presets.byId(r.$1) != null)
+              _StatusCard(preset: app.presets.byId(r.$1)!, accent: r.$2),
+        ]),
         const SizedBox(height: 20),
         SectionHeader('빠른 10분 세션'),
         _QuickTenCard(),
@@ -93,10 +86,9 @@ class HomeScreen extends StatelessWidget {
             message: '세션을 완료하면 여기에 표시됩니다.',
           )
         else
-          for (final r in recents)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _RecentRow(
+          ResponsiveGrid(minItemWidth: 340, children: [
+            for (final r in recents)
+              _RecentRow(
                 title: r.presetTitle,
                 meta:
                     '${_relative(r.startedAt)} · ${(r.playedSeconds / 60).round()}분',
@@ -105,7 +97,7 @@ class HomeScreen extends StatelessWidget {
                   if (p != null) openPresetInPlayer(context, p);
                 },
               ),
-            ),
+          ]),
         const SizedBox(height: 28),
         SectionHeader('즐겨찾기'),
         if (favorites.isEmpty)
@@ -114,15 +106,14 @@ class HomeScreen extends StatelessWidget {
             message: '자주 사용하는 세션을 저장해두세요.',
           )
         else
-          for (final p in favorites)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _RecentRow(
+          ResponsiveGrid(minItemWidth: 340, children: [
+            for (final p in favorites)
+              _RecentRow(
                 title: p.title,
                 meta: '${(p.totalDurationSec / 60).round()}분',
                 onRestart: () => openPresetInPlayer(context, p),
               ),
-            ),
+          ]),
       ],
     );
   }

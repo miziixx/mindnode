@@ -119,7 +119,7 @@ class _TabShell extends StatelessWidget {
               Positioned.fill(
                 child: Center(
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 940),
+                    constraints: const BoxConstraints(maxWidth: 1120),
                     child: IndexedStack(index: app.navIndex, children: _pages),
                   ),
                 ),
@@ -131,7 +131,7 @@ class _TabShell extends StatelessWidget {
                 bottom: bottomInset + 14,
                 child: Center(
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 900),
+                    constraints: const BoxConstraints(maxWidth: 1080),
                     child: MiniPlayer(visible: showMini),
                   ),
                 ),

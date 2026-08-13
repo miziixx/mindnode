@@ -9,6 +9,7 @@ import '../../widgets/app_icons.dart';
 import '../../widgets/common.dart';
 import '../../widgets/dialogs.dart';
 import '../../widgets/page_scaffold.dart';
+import '../../widgets/responsive_grid.dart';
 import '../player/player_screen.dart';
 import 'studio_screen.dart';
 
@@ -43,11 +44,9 @@ class StudioHomeScreen extends StatelessWidget {
             message: '새 사운드를 만들어 저장하면 여기에 모여요.',
           )
         else
-          for (final p in mine)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _MyPresetRow(preset: p),
-            ),
+          ResponsiveGrid(minItemWidth: 320, children: [
+            for (final p in mine) _MyPresetRow(preset: p),
+          ]),
         const SizedBox(height: 26),
         SectionHeader('기본 프리셋에서 시작'),
         Padding(
@@ -55,11 +54,9 @@ class StudioHomeScreen extends StatelessWidget {
           child: Text('기본 세션을 불러와 편집하고 새 프리셋으로 저장할 수 있어요.',
               style: AppTypography.tiny),
         ),
-        for (final p in builtIns)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: _StartFromRow(preset: p),
-          ),
+        ResponsiveGrid(minItemWidth: 320, children: [
+          for (final p in builtIns) _StartFromRow(preset: p),
+        ]),
       ],
     );
   }
