@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: ["main"]
   workflow_dispatch:
+    inputs:
+      deploy_vercel:
+        description: "Vercel 프로덕션 배포(수동일 때만, 기본 꺼짐)"
+        type: boolean
+        default: false
 
 jobs:
   # 순수 DSP 오프라인 검증(빌드 전 관문). 실패 시 이후 빌드 잡도 실행되지 않음.
@@ -96,6 +101,27 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
+
+  # Vercel 프로덕션 배포. 수동 실행 + deploy_vercel=true 일 때만 돈다.
+  # push/PR 로는 절대 실행되지 않음(자동배포 없음). 루트 도메인이라 base-href=/.
+  vercel:
+    needs: audio-verify
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_vercel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter create --org com.mindsound --project-name mindsound --platforms=web .
+      - run: flutter pub get
+      - run: flutter build web --release --no-wasm-dry-run --base-href /
+      - run: python3 tools/inject_csp.py build/web/index.html
+      - run: cp vercel.json build/web/vercel.json
+      - name: Deploy to Vercel (production)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: npx --yes vercel@latest deploy build/web --prod --yes --token "$VERCEL_TOKEN"
 
   # iOS 빌드는 macOS 러너(비용 10배)라 수동 실행(workflow_dispatch)에서만 돈다.
   # GitHub Actions 분(minutes) 절약용.
