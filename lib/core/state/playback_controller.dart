@@ -289,9 +289,10 @@ class PlaybackController extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
-  /// 사용자가 고른 배경 음악을 설정하고, 재생 중이면 바로 함께 재생한다.
+  /// 사용자가 고른 배경 음악을 설정하고 바로 재생을 시작한다.
   /// [isUrl]이 true면 URL(웹 blob 등), false면 로컬 파일 경로로 취급한다.
-  Future<void> setBackgroundMusic(String path, String name,
+  /// 성공 시 null, 실패 시 오류 메시지를 반환한다(UI에서 표시용).
+  Future<String?> setBackgroundMusic(String path, String name,
       {bool isUrl = false}) async {
     backgroundMusicPath = path;
     backgroundMusicName = name;
@@ -299,13 +300,16 @@ class PlaybackController extends ChangeNotifier with WidgetsBindingObserver {
     try {
       await _music!.setReleaseMode(ReleaseMode.loop);
       await _music!.setVolume(musicVolume01);
-      await _music!
-          .setSource(isUrl ? UrlSource(path) : DeviceFileSource(path));
-      if (state == PlaybackState.playing) await _music!.resume();
+      // play()로 즉시 재생 — 파일 선택(사용자 제스처) 직후라 웹 자동재생 정책 통과.
+      await _music!.play(isUrl ? UrlSource(path) : DeviceFileSource(path));
+      lastError = null;
+      notifyListeners();
+      return null;
     } catch (e) {
       lastError = 'music: $e';
+      notifyListeners();
+      return '$e';
     }
-    notifyListeners();
   }
 
   /// 배경 음악 음량(0..1).

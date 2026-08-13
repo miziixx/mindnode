@@ -549,23 +549,56 @@ class PlayerScreen extends StatelessWidget {
   }
 
   Future<void> _pickMusic(BuildContext context, PlaybackController pb) async {
-    final result = await FilePicker.platform
-        .pickFiles(type: FileType.audio, withData: true);
-    final file = result?.files.single;
-    if (file == null) return;
-    final name = file.name;
-    if (file.path != null) {
-      // 모바일/데스크톱: 로컬 파일 경로.
-      await pb.setBackgroundMusic(file.path!, name);
-    } else if (file.bytes != null) {
-      // 웹: 바이트 → blob URL.
-      final url = makeObjectUrl(file.bytes!, 'audio/*');
-      if (url == null) return;
-      await pb.setBackgroundMusic(url, name, isUrl: true);
-    } else {
-      return;
+    try {
+      final result = await FilePicker.platform
+          .pickFiles(type: FileType.audio, withData: true);
+      final file = result?.files.single;
+      if (file == null) return; // 취소
+      final name = file.name;
+      String? err;
+      if (file.path != null) {
+        // 모바일/데스크톱: 로컬 파일 경로.
+        err = await pb.setBackgroundMusic(file.path!, name);
+      } else if (file.bytes != null) {
+        // 웹: 바이트 → blob URL. 확장자로 올바른 MIME을 지정해야 재생됨.
+        final url = makeObjectUrl(file.bytes!, _audioMime(file.extension));
+        if (url == null) {
+          if (context.mounted) showToast(context, '이 브라우저에서 파일을 열 수 없어요');
+          return;
+        }
+        err = await pb.setBackgroundMusic(url, name, isUrl: true);
+      } else {
+        if (context.mounted) showToast(context, '파일을 읽지 못했어요');
+        return;
+      }
+      if (context.mounted) {
+        showToast(context, err == null ? '배경 음악을 재생해요' : '재생 실패: $err');
+      }
+    } catch (e) {
+      if (context.mounted) showToast(context, '불러오기 실패: $e');
     }
-    if (context.mounted) showToast(context, '배경 음악을 추가했어요');
+  }
+
+  String _audioMime(String? ext) {
+    switch ((ext ?? '').toLowerCase()) {
+      case 'mp3':
+        return 'audio/mpeg';
+      case 'm4a':
+      case 'aac':
+        return 'audio/mp4';
+      case 'wav':
+        return 'audio/wav';
+      case 'ogg':
+      case 'oga':
+        return 'audio/ogg';
+      case 'flac':
+        return 'audio/flac';
+      case 'weba':
+      case 'webm':
+        return 'audio/webm';
+      default:
+        return 'audio/mpeg';
+    }
   }
 
   Widget _sleepTimer(BuildContext context, PlaybackController pb, Color accent) {
