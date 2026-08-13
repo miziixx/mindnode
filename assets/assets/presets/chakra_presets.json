@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "presets": [
+    {
+      "schemaVersion": 1, "id": "chakra_1_root", "title": "1차크라 · 안정", "category": "chakra",
+      "symbolicUse": true, "fadeInSec": 5, "fadeOutSec": 15, "masterGainDb": -12,
+      "isBuiltIn": true, "chakraIndex": 1,
+      "stages": [{
+        "id": "main", "title": "ROOT · 396Hz", "durationSec": 660,
+        "primaryTone": { "enabled": true, "frequencyHz": 396.0, "gainDb": -26, "pan": 0 },
+        "drone": { "enabled": true, "centerHz": 396.0, "gainDb": -24, "movementRateHz": 0.04, "stereoWidth": 0.2 },
+        "secondaryTone": { "enabled": false, "frequencyHz": 792.0, "gainDb": -36, "pan": 0 },
+        "binaural": { "enabled": false, "carrierHz": 198.0, "beatHz": 7.83, "invert": false, "gainDb": -32 },
+        "pulse": { "enabled": false, "frequencyHz": 396.0, "rateHz": 7.83, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+        "natureAssetId": "fire_soft", "padAssetId": "grounding_dark", "chimeAssetId": null,
+        "chimeIntervalSec": 0, "transitionDurationSec": 1.5
+      }]
+    },
+    {
+      "schemaVersion": 1, "id": "chakra_2_sacral", "title": "2차크라 · 감정과 창조", "category": "chakra",
+      "symbolicUse": true, "fadeInSec": 5, "fadeOutSec": 15, "masterGainDb": -12,
+      "isBuiltIn": true, "chakraIndex": 2,
+      "stages": [{
+        "id": "main", "title": "SACRAL · 417Hz", "durationSec": 660,
+        "primaryTone": { "enabled": true, "frequencyHz": 417.0, "gainDb": -26, "pan": 0 },
+        "drone": { "enabled": true, "centerHz": 417.0, "gainDb": -24, "movementRateHz": 0.05, "stereoWidth": 0.22 },
+        "secondaryTone": { "enabled": false, "frequencyHz": 834.0, "gainDb": -36, "pan": 0 },
+        "binaural": { "enabled": false, "carrierHz": 208.5, "beatHz": 7.0, "invert": false, "gainDb": -32 },
+        "pulse": { "enabled": false, "frequencyHz": 417.0, "rateHz": 7.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+        "natureAssetId": "stream_soft", "padAssetId": "warm_air", "chimeAssetId": null,
+        "chimeIntervalSec": 0, "transitionDurationSec": 1.5
+      }]
+    },
+    {
+      "schemaVersion": 1, "id": "chakra_3_solar", "title": "3차크라 · 의지와 활력", "category": "chakra",
+      "symbolicUse": true, "fadeInSec": 5, "fadeOutSec": 15, "masterGainDb": -12,
+      "isBuiltIn": true, "chakraIndex": 3,
+      "stages": [{
+        "id": "main", "title": "SOLAR PLEXUS · 528Hz", "durationSec": 660,
+        "primaryTone": { "enabled": true, "frequencyHz": 528.0, "gainDb": -26, "pan": 0 },
+        "drone": { "enabled": true, "centerHz": 528.0, "gainDb": -24, "movementRateHz": 0.06, "stereoWidth": 0.22 },
+        "secondaryTone": { "enabled": false, "frequencyHz": 1056.0, "gainDb": -36, "pan": 0 },
+        "binaural": { "enabled": false, "carrierHz": 264.0, "beatHz": 8.0, "invert": false, "gainDb": -32 },
+        "pulse": { "enabled": false, "frequencyHz": 528.0, "rateHz": 8.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+        "natureAssetId": null, "padAssetId": "soft_light", "chimeAssetId": null,
+        "chimeIntervalSec": 0, "transitionDurationSec": 1.5
+      }]
+    },
+    {
+      "schemaVersion": 1, "id": "chakra_4_heart", "title": "4차크라 · 사랑과 연결", "category": "chakra",
+      "symbolicUse": true, "fadeInSec": 5, "fadeOutSec": 15, "masterGainDb": -12,
+      "isBuiltIn": true, "chakraIndex": 4,
+      "stages": [{
+        "id": "main", "title": "HEART · 639Hz", "durationSec": 660,
+        "primaryTone": { "enabled": true, "frequencyHz": 639.0, "gainDb": -26, "pan": 0 },
+        "drone": { "enabled": true, "centerHz": 639.0, "gainDb": -24, "movementRateHz": 0.05, "stereoWidth": 0.25 },
+        "secondaryTone": { "enabled": false, "frequencyHz": 1278.0, "gainDb": -36, "pan": 0 },
+        "binaural": { "enabled": false, "carrierHz": 213.0, "beatHz": 6.0, "invert": false, "gainDb": -32 },
+        "pulse": { "enabled": false, "frequencyHz": 639.0, "rateHz": 6.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+        "natureAssetId": "wind_light", "padAssetId": "warm_air", "chimeAssetId": null,
+        "chimeIntervalSec": 0, "transitionDurationSec": 1.5
+      }]
+    },
+    {
+      "schemaVersion": 1, "id": "chakra_5_throat", "title": "5차크라 · 표현", "category": "chakra",
+      "symbolicUse": true, "fadeInSec": 5, "fadeOutSec": 15, "masterGainDb": -12,
+      "isBuiltIn": true, "chakraIndex": 5,
+      "stages": [{
+        "id": "main", "title": "THROAT · 741Hz", "durationSec": 660,
+        "primaryTone": { "enabled": true, "frequencyHz": 741.0, "gainDb": -26, "pan": 0 },
+        "drone": { "enabled": true, "centerHz": 741.0, "gainDb": -25, "movementRateHz": 0.06, "stereoWidth": 0.25 },
+        "secondaryTone": { "enabled": false, "frequencyHz": 1482.0, "gainDb": -38, "pan": 0 },
+        "binaural": { "enabled": false, "carrierHz": 247.0, "beatHz": 7.0, "invert": false, "gainDb": -32 },
+        "pulse": { "enabled": false, "frequencyHz": 741.0, "rateHz": 7.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+        "natureAssetId": null, "padAssetId": "crystal_air", "chimeAssetId": "bowl_high",
+        "chimeIntervalSec": 0, "transitionDurationSec": 1.5
+      }]
+    },
+    {
+      "schemaVersion": 1, "id": "chakra_6_thirdeye", "title": "6차크라 · 직관", "category": "chakra",
+      "symbolicUse": true, "fadeInSec": 5, "fadeOutSec": 15, "masterGainDb": -12,
+      "isBuiltIn": true, "chakraIndex": 6,
+      "stages": [{
+        "id": "main", "title": "THIRD EYE · 852Hz", "durationSec": 660,
+        "primaryTone": { "enabled": true, "frequencyHz": 852.0, "gainDb": -34, "pan": 0 },
+        "drone": { "enabled": true, "centerHz": 426.0, "gainDb": -24, "movementRateHz": 0.05, "stereoWidth": 0.28 },
+        "secondaryTone": { "enabled": false, "frequencyHz": 852.0, "gainDb": -38, "pan": 0 },
+        "binaural": { "enabled": false, "carrierHz": 213.0, "beatHz": 5.0, "invert": false, "gainDb": -32 },
+        "pulse": { "enabled": false, "frequencyHz": 426.0, "rateHz": 5.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+        "natureAssetId": null, "padAssetId": "deep_space", "chimeAssetId": null,
+        "chimeIntervalSec": 0, "transitionDurationSec": 1.5
+      }]
+    },
+    {
+      "schemaVersion": 1, "id": "chakra_7_crown", "title": "7차크라 · 명상과 연결", "category": "chakra",
+      "symbolicUse": true, "fadeInSec": 5, "fadeOutSec": 15, "masterGainDb": -12,
+      "isBuiltIn": true, "chakraIndex": 7,
+      "stages": [{
+        "id": "main", "title": "CROWN · 963Hz", "durationSec": 660,
+        "primaryTone": { "enabled": true, "frequencyHz": 963.0, "gainDb": -34, "pan": 0 },
+        "drone": { "enabled": true, "centerHz": 481.5, "gainDb": -24, "movementRateHz": 0.04, "stereoWidth": 0.3 },
+        "secondaryTone": { "enabled": false, "frequencyHz": 963.0, "gainDb": -38, "pan": 0 },
+        "binaural": { "enabled": false, "carrierHz": 240.75, "beatHz": 4.0, "invert": false, "gainDb": -32 },
+        "pulse": { "enabled": false, "frequencyHz": 481.5, "rateHz": 4.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+        "natureAssetId": null, "padAssetId": "crystal_air", "chimeAssetId": null,
+        "chimeIntervalSec": 0, "transitionDurationSec": 1.5
+      }]
+    },
+    {
+      "schemaVersion": 1, "id": "chakra_full_cycle", "title": "전체 차크라 순환", "category": "chakra",
+      "symbolicUse": true, "fadeInSec": 5, "fadeOutSec": 15, "masterGainDb": -12,
+      "isBuiltIn": true,
+      "stages": [
+        { "id": "c1", "title": "1 · ROOT 396Hz", "durationSec": 180,
+          "primaryTone": { "enabled": true, "frequencyHz": 396.0, "gainDb": -26, "pan": 0 },
+          "drone": { "enabled": true, "centerHz": 396.0, "gainDb": -24, "movementRateHz": 0.04, "stereoWidth": 0.2 },
+          "secondaryTone": { "enabled": false, "frequencyHz": 792.0, "gainDb": -36, "pan": 0 },
+          "binaural": { "enabled": false, "carrierHz": 198.0, "beatHz": 7.0, "invert": false, "gainDb": -32 },
+          "pulse": { "enabled": false, "frequencyHz": 396.0, "rateHz": 7.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+          "natureAssetId": null, "padAssetId": "grounding_dark", "chimeAssetId": "bell_soft_01", "chimeIntervalSec": 0, "transitionDurationSec": 2.0 },
+        { "id": "c2", "title": "2 · SACRAL 417Hz", "durationSec": 180,
+          "primaryTone": { "enabled": true, "frequencyHz": 417.0, "gainDb": -26, "pan": 0 },
+          "drone": { "enabled": true, "centerHz": 417.0, "gainDb": -24, "movementRateHz": 0.05, "stereoWidth": 0.2 },
+          "secondaryTone": { "enabled": false, "frequencyHz": 834.0, "gainDb": -36, "pan": 0 },
+          "binaural": { "enabled": false, "carrierHz": 208.5, "beatHz": 7.0, "invert": false, "gainDb": -32 },
+          "pulse": { "enabled": false, "frequencyHz": 417.0, "rateHz": 7.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+          "natureAssetId": null, "padAssetId": "warm_air", "chimeAssetId": "bell_soft_01", "chimeIntervalSec": 0, "transitionDurationSec": 2.0 },
+        { "id": "c3", "title": "3 · SOLAR 528Hz", "durationSec": 180,
+          "primaryTone": { "enabled": true, "frequencyHz": 528.0, "gainDb": -26, "pan": 0 },
+          "drone": { "enabled": true, "centerHz": 528.0, "gainDb": -24, "movementRateHz": 0.06, "stereoWidth": 0.22 },
+          "secondaryTone": { "enabled": false, "frequencyHz": 1056.0, "gainDb": -36, "pan": 0 },
+          "binaural": { "enabled": false, "carrierHz": 264.0, "beatHz": 8.0, "invert": false, "gainDb": -32 },
+          "pulse": { "enabled": false, "frequencyHz": 528.0, "rateHz": 8.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+          "natureAssetId": null, "padAssetId": "soft_light", "chimeAssetId": "bell_soft_01", "chimeIntervalSec": 0, "transitionDurationSec": 2.0 },
+        { "id": "c4", "title": "4 · HEART 639Hz", "durationSec": 180,
+          "primaryTone": { "enabled": true, "frequencyHz": 639.0, "gainDb": -26, "pan": 0 },
+          "drone": { "enabled": true, "centerHz": 639.0, "gainDb": -24, "movementRateHz": 0.05, "stereoWidth": 0.25 },
+          "secondaryTone": { "enabled": false, "frequencyHz": 1278.0, "gainDb": -36, "pan": 0 },
+          "binaural": { "enabled": false, "carrierHz": 213.0, "beatHz": 6.0, "invert": false, "gainDb": -32 },
+          "pulse": { "enabled": false, "frequencyHz": 639.0, "rateHz": 6.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+          "natureAssetId": "wind_light", "padAssetId": "warm_air", "chimeAssetId": "bell_soft_01", "chimeIntervalSec": 0, "transitionDurationSec": 2.0 },
+        { "id": "c5", "title": "5 · THROAT 741Hz", "durationSec": 180,
+          "primaryTone": { "enabled": true, "frequencyHz": 741.0, "gainDb": -26, "pan": 0 },
+          "drone": { "enabled": true, "centerHz": 741.0, "gainDb": -25, "movementRateHz": 0.06, "stereoWidth": 0.25 },
+          "secondaryTone": { "enabled": false, "frequencyHz": 1482.0, "gainDb": -38, "pan": 0 },
+          "binaural": { "enabled": false, "carrierHz": 247.0, "beatHz": 7.0, "invert": false, "gainDb": -32 },
+          "pulse": { "enabled": false, "frequencyHz": 741.0, "rateHz": 7.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+          "natureAssetId": null, "padAssetId": "crystal_air", "chimeAssetId": "bell_soft_01", "chimeIntervalSec": 0, "transitionDurationSec": 2.0 },
+        { "id": "c6", "title": "6 · THIRD EYE 852Hz", "durationSec": 180,
+          "primaryTone": { "enabled": true, "frequencyHz": 852.0, "gainDb": -34, "pan": 0 },
+          "drone": { "enabled": true, "centerHz": 426.0, "gainDb": -24, "movementRateHz": 0.05, "stereoWidth": 0.28 },
+          "secondaryTone": { "enabled": false, "frequencyHz": 852.0, "gainDb": -38, "pan": 0 },
+          "binaural": { "enabled": false, "carrierHz": 213.0, "beatHz": 5.0, "invert": false, "gainDb": -32 },
+          "pulse": { "enabled": false, "frequencyHz": 426.0, "rateHz": 5.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+          "natureAssetId": null, "padAssetId": "deep_space", "chimeAssetId": "bell_soft_01", "chimeIntervalSec": 0, "transitionDurationSec": 2.0 },
+        { "id": "c7", "title": "7 · CROWN 963Hz", "durationSec": 180,
+          "primaryTone": { "enabled": true, "frequencyHz": 963.0, "gainDb": -34, "pan": 0 },
+          "drone": { "enabled": true, "centerHz": 481.5, "gainDb": -24, "movementRateHz": 0.04, "stereoWidth": 0.3 },
+          "secondaryTone": { "enabled": false, "frequencyHz": 963.0, "gainDb": -38, "pan": 0 },
+          "binaural": { "enabled": false, "carrierHz": 240.75, "beatHz": 4.0, "invert": false, "gainDb": -32 },
+          "pulse": { "enabled": false, "frequencyHz": 481.5, "rateHz": 4.0, "depth": 0.2, "stereoMode": "center", "gainDb": -30 },
+          "natureAssetId": null, "padAssetId": "crystal_air", "chimeAssetId": "session_end", "chimeIntervalSec": 0, "transitionDurationSec": 2.0 }
+      ]
+    }
+  ]
+}
